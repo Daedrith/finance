@@ -1,0 +1,95 @@
+doctype html
+html
+  head
+    title Finance
+    meta(name='viewport', content='user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0')
+    meta(name='mobile-web-app-capable', content='yes')
+    meta(name='apple-mobile-web-app-capable', content='yes')
+    
+    script(src='pouchdb/pouchdb.min.js')
+    script(src='jquery/jquery.min.js')
+    
+    style
+      :stylus
+        form
+          display flex
+          flex-flow row wrap
+      
+        fieldset
+          label
+            margin 3px 0
+            
+            //display flex
+            //align-items baseline
+            //justify-content space-between
+            display block
+            text-align right
+            
+            input
+              width 70%
+              margin-left 5px
+              
+          button
+            display block
+            margin-left auto
+        
+        #dbdump
+          
+          .del
+            color red
+            font-weight bold
+            cursor pointer
+            &::before
+              content " X"
+  body
+    form
+      fieldset
+        legend Create Account
+        label
+          | Name
+          input#ca-name
+        button#ca-btn(type='button') Create
+      
+      datalist#accts
+        option(value='Cash')
+        option(value='Savings')
+      
+      fieldset
+        legend Create transaction
+        label
+          | From
+          input#ct-from(list='accts')
+        label
+          | To
+          input#ct-to(list='accts')
+        label
+          | Amount
+          input#ct-amt(type='number')
+        button#ct-btn(type='button') Create
+      
+    pre#dbdump
+    
+    script
+      :livescript
+        db = new PouchDB('finance');
+      
+        $ \#ca-btn .click !->
+          db.put {
+            _id: 'account-' + $ \#ca-name .val!
+          }
+        
+        del = -> db.remove it .catch !-> console.log it
+        
+        dump-db = !->
+          db.allDocs { +include_docs }
+          .then !->
+            docs = it.rows.map (r) ->
+              $ \<div> .text (JSON.stringify r.doc, null 2) .append ($ \<span> .addClass \del .click -> del r.doc ) .0
+            $ \#dbdump .empty! .append docs
+          .catch !->
+            console.log it
+       
+        dump-db!
+       
+        db.changes { +live, since: \now } .on \change dump-db
+          

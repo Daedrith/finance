@@ -6,9 +6,6 @@ html
     meta(name='mobile-web-app-capable', content='yes')
     meta(name='apple-mobile-web-app-capable', content='yes')
     
-    script(src='pouchdb/pouchdb.min.js')
-    script(src='jquery/jquery.min.js')
-    
     style
       :stylus
         form
@@ -69,27 +66,62 @@ html
       
     pre#dbdump
     
+    script(src='pouchdb/pouchdb.min.js')
+    script(src='jquery/jquery.min.js')
+    script(src='mercury/mercury.js')
+    
     script
       :livescript
-        db = new PouchDB('finance');
+        {h} = hg = mercury
+        
+        log = console~log
       
-        $ \#ca-btn .click !->
-          db.put {
-            _id: 'account-' + $ \#ca-name .val!
+        db = new PouchDB \finance
+        
+        res <- db.allDocs { +include_docs } .catch log .then
+        
+        hash = Object.create(null);
+        res.rows.forEach (r) !->
+          d = r.doc
+          hash[d._id] = {
+            d._id
+            json: JSON.stringify r.doc, null 2
           }
         
-        del = -> db.remove it .catch !-> console.log it
+        dump-state = hg.varhash hash, hg.struct
         
-        dump-db = !->
-          db.allDocs { +include_docs }
-          .then !->
-            docs = it.rows.map (r) ->
-              $ \<div> .text (JSON.stringify r.doc, null 2) .append ($ \<span> .addClass \del .click -> del r.doc ) .0
-            $ \#dbdump .empty! .append docs
-          .catch !->
-            console.log it
-       
-        dump-db!
-       
-        db.changes { +live, since: \now } .on \change dump-db
-          
+        del = (s, id) ->
+          db.remove id .catch log
+          dump-state.delete id
+          # TODO: optimistically update local state?
+        
+        app-state = hg.state {
+          dump-state,
+          channels: {
+            del
+          }
+        }
+        
+        hg.app(
+          $ \#dbdump .0
+          app-state,
+          (s) ->
+            objs = Object.keys s.dump-state .map ->
+              d = s.dump-state[it]
+              h \div [
+                d.json,
+                h \span.del 'ev-click': hg.send s.channels.del, d._id
+              ]
+            h \div objs
+        )
+        
+        #
+        #    $ \<div> .text (JSON.stringify r.doc, null 2) .append ($ \<span> .addClass \del .click -> del r.doc ) .0
+        #    $ \#dbdump .empty! .append docs
+        #$ \#ca-btn .click !->
+        #  db.put {
+        #    _id: 'acct-' + $ \#ca-name .val!
+        #  }
+        #
+        #db.changes { +live, since: \now } .on \change dump-db
+        

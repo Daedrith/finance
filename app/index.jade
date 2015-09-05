@@ -16,9 +16,6 @@ html
           label
             margin 3px 0
             
-            //display flex
-            //align-items baseline
-            //justify-content space-between
             display block
             text-align right
             
@@ -39,34 +36,6 @@ html
             &::before
               content " X"
   body
-    //
-      form
-        fieldset
-          legend Create Account
-          label
-            | Name
-            input#ca-name
-          button#ca-btn(type='button') Create
-      
-        datalist#accts
-          option(value='Cash')
-          option(value='Savings')
-        
-        fieldset
-          legend Create transaction
-          label
-            | From
-            input#ct-from(list='accts')
-          label
-            | To
-            input#ct-to(list='accts')
-          label
-            | Amount
-            input#ct-amt(type='number')
-          button#ct-btn(type='button') Create
-      
-      pre#dbdump
-    
     script(src='pouchdb/pouchdb.min.js')
     script(src='jquery/jquery.min.js')
     script(src='underscore/underscore.js')
@@ -80,21 +49,39 @@ html
         
         res <- db.allDocs { +include_docs } .catch log .then
         
-        dump-state = hg.array res.rows.map -> hg.struct it.doc
-        
-        del = (s, d) ->
+        acct-add = (s, d) ->
+          db.put {
+            _id: 'acct-' + $ \#ca-name .val!
+          }
+          
+        acct-del = (s, d) ->
           db.remove d .catch log
           # optimistically update local state?
-          s.dump-state
-            ..set ..!filter (._id != d._id)
+        
+        dump-state = hg.array res.rows.map -> hg.struct it.doc
         
         app-state = hg.state {
           dump-state,
           channels: {
-            del
+            acct-add,
+            acct-del
           }
         }
         
+        db.changes { +live, +include_docs, since: \now }
+        .on \change (c) ->
+          var ind
+          oa = dump-state
+          oa.some (d, i) ->
+            if d._id == c.id
+              ind := i
+          if c.deleted
+            oa.splice ind, 1
+          else if ind?
+            oa.put ind, hg.struct c.doc
+          else
+            oa.push c.doc
+            
         lbl = (n, c) ->
           h \label [n, h c]
         
@@ -110,7 +97,7 @@ html
                 lbl 'Name' \input#ca-name
                 h \button#ca-btn {
                   type: \button
-                  \ev-click : hg.send chs.addAcct
+                  \ev-click : hg.send chs.acct-add
                   } 'Create'
               ]
             * h \fieldset [
@@ -133,17 +120,8 @@ html
             * h \pre#dbdump (s.dump-state.map ->
                 h \div [
                   (JSON.stringify it, null 2),
-                  h \span.del 'ev-click': hg.send s.channels.del, it
+                  h \span.del 'ev-click': hg.send chs.acct-del, it
                 ])
             ]
         )
-        
-        # h('div', [h('form', [forms, h('datalist#accts')], h('pre#dbdump', s.dumpState))]);
-        
-        #$ \#ca-btn .click !->
-        #  db.put {
-        #    _id: 'acct-' + $ \#ca-name .val!
-        #  }
-        #
-        #db.changes { +live, since: \now } .on \change dump-db
         

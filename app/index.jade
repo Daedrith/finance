@@ -39,61 +39,54 @@ html
             &::before
               content " X"
   body
-    form
-      fieldset
-        legend Create Account
-        label
-          | Name
-          input#ca-name
-        button#ca-btn(type='button') Create
+    //
+      form
+        fieldset
+          legend Create Account
+          label
+            | Name
+            input#ca-name
+          button#ca-btn(type='button') Create
       
-      datalist#accts
-        option(value='Cash')
-        option(value='Savings')
+        datalist#accts
+          option(value='Cash')
+          option(value='Savings')
+        
+        fieldset
+          legend Create transaction
+          label
+            | From
+            input#ct-from(list='accts')
+          label
+            | To
+            input#ct-to(list='accts')
+          label
+            | Amount
+            input#ct-amt(type='number')
+          button#ct-btn(type='button') Create
       
-      fieldset
-        legend Create transaction
-        label
-          | From
-          input#ct-from(list='accts')
-        label
-          | To
-          input#ct-to(list='accts')
-        label
-          | Amount
-          input#ct-amt(type='number')
-        button#ct-btn(type='button') Create
-      
-    pre#dbdump
+      pre#dbdump
     
     script(src='pouchdb/pouchdb.min.js')
     script(src='jquery/jquery.min.js')
+    script(src='underscore/underscore.js')
     script(src='mercury/mercury.js')
     
     script
       :livescript
         {h} = hg = mercury
-        
         log = console~log
-      
         db = new PouchDB \finance
         
         res <- db.allDocs { +include_docs } .catch log .then
         
-        hash = Object.create(null);
-        res.rows.forEach (r) !->
-          d = r.doc
-          hash[d._id] = {
-            d._id
-            json: JSON.stringify r.doc, null 2
-          }
+        dump-state = hg.array res.rows.map -> hg.struct it.doc
         
-        dump-state = hg.varhash hash, hg.struct
-        
-        del = (s, id) ->
-          db.remove id .catch log
-          dump-state.delete id
-          # TODO: optimistically update local state?
+        del = (s, d) ->
+          db.remove d .catch log
+          # optimistically update local state?
+          s.dump-state
+            ..set ..!filter (._id != d._id)
         
         app-state = hg.state {
           dump-state,
@@ -102,22 +95,51 @@ html
           }
         }
         
+        lbl = (n, c) ->
+          h \label [n, h c]
+        
+        var forms
         hg.app(
-          $ \#dbdump .0
+          $ \body .0
           app-state,
           (s) ->
-            objs = Object.keys s.dump-state .map ->
-              d = s.dump-state[it]
-              h \div [
-                d.json,
-                h \span.del 'ev-click': hg.send s.channels.del, d._id
+            chs = s.channels
+            forms ?:= [
+            * h \fieldset [
+                h \legend 'Create Account'
+                lbl 'Name' \input#ca-name
+                h \button#ca-btn {
+                  type: \button
+                  \ev-click : hg.send chs.addAcct
+                  } 'Create'
               ]
-            h \div objs
+            * h \fieldset [
+                h \legend 'Create transaction'
+                lbl 'From' \input#ct-from attributes: list: 'accts'
+                lbl 'To' \input#ct-to attributes: list: 'accts'
+                lbl 'Amount' \input#ct-amt type: 'number'
+                h \button#ct-btn {type:\button} 'Create'
+              ]
+            ]
+            
+            h \div [
+            * h \form [
+                forms
+                h \datalist#accts [
+                  h \option {value: 'Cash'}
+                  h \option {value: 'Savings'}
+                ]
+              ]
+            * h \pre#dbdump (s.dump-state.map ->
+                h \div [
+                  (JSON.stringify it, null 2),
+                  h \span.del 'ev-click': hg.send s.channels.del, it
+                ])
+            ]
         )
         
-        #
-        #    $ \<div> .text (JSON.stringify r.doc, null 2) .append ($ \<span> .addClass \del .click -> del r.doc ) .0
-        #    $ \#dbdump .empty! .append docs
+        # h('div', [h('form', [forms, h('datalist#accts')], h('pre#dbdump', s.dumpState))]);
+        
         #$ \#ca-btn .click !->
         #  db.put {
         #    _id: 'acct-' + $ \#ca-name .val!

@@ -49,12 +49,25 @@ html
         
         res <- db.allDocs { +include_docs } .catch log .then
         
+        gv = -> $ it .val!
+        
         acct-add = (s, d) ->
           db.put {
-            _id: 'acct-' + $ \#ca-name .val!
+            _id: "acct-#{gv \#ca-name}"
           }
           
-        acct-del = (s, d) ->
+        xact-add = (s, d) ->
+          postDate = createDate = Date.now!
+          db.put {
+            _id: "xact-#createDate"
+            postDate
+            status: \verified
+            offsets:
+              * acct: (gv \#ct-from), amt: -100*(gv \#ct-amt)
+              * acct: (gv \#ct-to), amt: 100*(gv \#ct-amt)
+          }
+          
+        doc-del = (s, d) ->
           db.remove d .catch log
           # optimistically update local state?
         
@@ -63,8 +76,9 @@ html
         app-state = hg.state {
           dump-state,
           channels: {
-            acct-add,
-            acct-del
+            acct-add
+            xact-add
+            doc-del
           }
         }
         
@@ -82,8 +96,7 @@ html
           else
             oa.push c.doc
             
-        lbl = (n, c) ->
-          h \label [n, h c]
+        lbl = (n, c) -> h \label [n, h c]
         
         var forms
         hg.app(
@@ -104,8 +117,11 @@ html
                 h \legend 'Create transaction'
                 lbl 'From' \input#ct-from attributes: list: 'accts'
                 lbl 'To' \input#ct-to attributes: list: 'accts'
-                lbl 'Amount' \input#ct-amt type: 'number'
-                h \button#ct-btn {type:\button} 'Create'
+                lbl 'Amount' \input#ct-amt type: \number
+                h \button#ct-btn {
+                  type: \button
+                  \ev-click : hg.send chs.xact-add
+                  } 'Create'
               ]
             ]
             
@@ -120,7 +136,7 @@ html
             * h \pre#dbdump (s.dump-state.map ->
                 h \div [
                   (JSON.stringify it, null 2),
-                  h \span.del 'ev-click': hg.send chs.acct-del, it
+                  h \span.del 'ev-click': hg.send chs.doc-del, it
                 ])
             ]
         )

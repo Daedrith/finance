@@ -45,22 +45,20 @@ html
       :livescript
         {h} = hg = mercury
         log = console~log
-        db = new PouchDB \finance
-        
-        res <- db.allDocs { +include_docs } .catch log .then
+        local-db = new PouchDB \finance
         
         gv = -> $ it .val!
         
         acct-add = (s, d) ->
-          db.put {
+          local-db.put {
             _id: "acct-#{gv \#ca-name}"
           }
           
         xact-add = (s, d) ->
           postDate = createDate = Date.now!
-          db.put {
-            _id: "xact-#createDate"
-            postDate
+          local-db.put {
+            _id: "xact-#postDate"
+            createDate
             status: \verified
             offsets:
               * acct: (gv \#ct-from), amt: -100*(gv \#ct-amt)
@@ -68,13 +66,49 @@ html
           }
           
         doc-del = (s, d) ->
-          db.remove d .catch log
+          local-db.remove d .catch log
           # optimistically update local state?
         
-        dump-state = hg.array res.rows.map -> hg.struct it.doc
+        db-array = (opts = {}) ->
+          # TODO: avoid mutating opts?
+          arr =  hg.array []
+          
+          if opts.startkey? and not opts.endkey?
+            c = (opts.startkey.slice -1 .charCodeAt 0) + 1 |> String.fromCharCode
+            opts.endkey = (opts.startkey.slice 0 -1) + c
+            opts.inclusive_end = false
+          
+          init-query = opts with { +include_docs }
+          local-db.allDocs init-query
+          .catch log
+          .then (res) ->
+            arr.set res.rows.map -> hg.struct it.doc
+          
+          # is there overhead in having multiple local change feeds?
+          if opts.startkey?
+            # TODO: account for +inclusive_end
+            opts.filter = -> opts.startkey <= it._id < opts.endkey
+          
+          change-query = opts with { +live, +include_docs, since: \now }
+          
+          local-db.changes change-query
+          .on \change (c) ->
+            var ind
+            arr.some (d, i) ->
+              if d._id == c.id
+                ind := i
+            if c.deleted
+              arr.splice ind, 1
+            else if ind?
+              arr.put ind, hg.struct c.doc
+            else
+              # insert in order?
+              arr.push c.doc
+          
+          arr
         
         app-state = hg.state {
-          dump-state,
+          dump-state: db-array!
           channels: {
             acct-add
             xact-add
@@ -82,20 +116,6 @@ html
           }
         }
         
-        db.changes { +live, +include_docs, since: \now }
-        .on \change (c) ->
-          var ind
-          oa = dump-state
-          oa.some (d, i) ->
-            if d._id == c.id
-              ind := i
-          if c.deleted
-            oa.splice ind, 1
-          else if ind?
-            oa.put ind, hg.struct c.doc
-          else
-            oa.push c.doc
-            
         lbl = (n, c) -> h \label [n, h c]
         
         var forms

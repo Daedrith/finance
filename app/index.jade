@@ -8,11 +8,14 @@ html
     
     style
       :stylus
-        form
+        .flex-container
           display flex
           flex-flow row wrap
       
-        fieldset
+        form
+          &:valid fieldset
+            border-color lime
+            
           label
             margin 3px 0
             
@@ -51,7 +54,8 @@ html
         
         acct-add = (s, d) ->
           local-db.put {
-            _id: "acct-#{gv \#ca-name}"
+            # TODO: decouple name from identity?
+            _id: "acct-#{d.name}"
           }
           
         xact-add = (s, d) ->
@@ -61,8 +65,8 @@ html
             createDate
             status: \verified
             offsets:
-              * acct: (gv \#ct-from), amt: -100*(gv \#ct-amt)
-              * acct: (gv \#ct-to), amt: 100*(gv \#ct-amt)
+              * acct: (d.ct-from), amt: -100*(gv \#ct-amt)
+              * acct: (d.ct-to), amt: 100*(gv \#ct-amt)
           }
           
         doc-del = (s, d) ->
@@ -71,6 +75,7 @@ html
         
         db-array = (opts = {}) ->
           # TODO: avoid mutating opts?
+          # TODO: apparently varhash is favored over arr?
           arr =  hg.array []
           
           if opts.startkey? and not opts.endkey?
@@ -78,6 +83,7 @@ html
             opts.endkey = (opts.startkey.slice 0 -1) + c
             opts.inclusive_end = false
           
+          # TODO: do we use struct or value?
           init-query = opts with { +include_docs }
           local-db.allDocs init-query
           .catch log
@@ -116,7 +122,7 @@ html
           }
         }
         
-        lbl = (n, c) -> h \label [n, h c]
+        lbl = (n, c, a) -> h \label [n, (h c, a)]
         
         var forms
         hg.app(
@@ -125,32 +131,32 @@ html
           (s) ->
             chs = s.channels
             forms ?:= [
-            * h \fieldset [
+            * h \form {
+                \ev-submit : hg.sendSubmit chs.acct-add
+              }, h \fieldset [
                 h \legend 'Create Account'
-                lbl 'Name' \input#ca-name
-                h \button#ca-btn {
-                  type: \button
-                  \ev-click : hg.send chs.acct-add
-                  } 'Create'
+                lbl 'Name' \input { name: \name, +required }
+                h \button 'Create'
               ]
-            * h \fieldset [
+            * h \form {
+                \ev-submit : hg.sendSubmit chs.xact-add
+              }, h \fieldset [
                 h \legend 'Create transaction'
-                lbl 'From' \input#ct-from attributes: list: 'accts'
-                lbl 'To' \input#ct-to attributes: list: 'accts'
-                lbl 'Amount' \input#ct-amt type: \number
-                h \button#ct-btn {
-                  type: \button
-                  \ev-click : hg.send chs.xact-add
-                  } 'Create'
+                lbl 'From' \input { name: \from, +required, attributes: list: 'accts' }
+                lbl 'To' \input { name: \to, +required, attributes: list: 'accts' }
+                lbl 'Amount' \input { name: \amt, type: \number, +required }
+                h \button 'Create'
               ]
             ]
             
             h \div [
-            * h \form [
-                forms
-                h \datalist#accts [
-                  h \option {value: 'Cash'}
-                  h \option {value: 'Savings'}
+            * h \.flex-container [
+              * forms
+              * h \form [
+                  h \datalist#accts [
+                    h \option {value: 'Cash'}
+                    h \option {value: 'Savings'}
+                  ]
                 ]
               ]
             * h \pre#dbdump (s.dump-state.map ->

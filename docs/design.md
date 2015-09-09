@@ -9,6 +9,7 @@
     - objects can have hierarchies
 - Well, I think the simplest data model will work best for me:
   - Account: name, credit/debit labels, tags
+    - Do we decouple name from identity?
   - Transaction: balanced transfer between 2 or more accounts; 
     - List of (account, amount delta) pairs: call this a transfer?
       - Amounts should be scaled by 100 (if I don't have fractional amounts) to avoid floating point precision errors)

@@ -52,6 +52,13 @@ Channels
 - acct add/edit
 - xact add/edit
 
+Optimization
+------------
+
+- change `db-array` to `db-varhash`?
+- figure out where I use plain values or obesrv-values
+- thunks
+
 Version 2
 =========
 

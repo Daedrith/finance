@@ -50,6 +50,13 @@ html
         log = console~log
         local-db = new PouchDB \finance
         
+        <- local-db.put {
+          _id: '_design/accts'
+          views:
+            accts:
+              map: (-> emit it.name if 'acct-' <= it._id < 'acct.').toString!
+        } .catch (-> log it unless it.status == 409) .then
+        
         db-array = (opts = {}) ->
           # TODO: avoid mutating opts?
           arr = hg.array []
@@ -89,41 +96,38 @@ html
           
           arr
         
-        db-hash = (opts = {}) ->
-          # TODO: avoid mutating opts?
-          # TODO: can't see the point of varhash over value, other than we don't have to completely recreate the value each time?
-          hash =  hg.varhash {}
+        db-query = (view, opts) ->
+          hash = hg.varhash {}, hg.value
           
-          if opts.startkey? and not opts.endkey?
-            c = (opts.startkey.slice -1 .charCodeAt 0) + 1 |> String.fromCharCode
-            opts.endkey = (opts.startkey.slice 0 -1) + c
-            opts.inclusive_end = false
-          
-          # TODO: do we use struct or value?
-          key-fn = opts.key-fn || (._id)
-          init-query = opts with { +include_docs }
-          local-db.allDocs init-query
+          view-query = opts with { +include_docs }
+          local-db.query view, view-query
           .catch log
           .then (res) ->
-            hash.set _.index-by (res.rows.map (.doc)), key-fn
+            for r in res.rows
+              hash.put r.key, r.doc
           
-          # is there overhead in having multiple local change feeds?
-          if opts.startkey?
-            # TODO: account for +inclusive_end
-            opts.filter = -> opts.startkey <= it._id < opts.endkey
-          
-          change-query = opts with { +live, +include_docs, since: \now }
+          change-query = opts with { +live, +include_docs, since: \now, filter: \_view, view }
           
           local-db.changes change-query
           .on \change (c) ->
-            if c.deleted
-              hash.delete key-fn c.doc
-            else
-              hash.put (key-fn c.doc), c.doc
+            local-db.query view, view-query
+            .catch log
+            .then (res) ->
+              old = hash!
+              oldkeys = Object.keys old
+              n = _.index-by res.rows, (.key)
+              newkeys = Object.keys n
+              for k in _.difference newkeys, oldkeys
+                hash.put k, n[k].doc
+              for k in _.difference oldkeys, newkeys
+                hash.delete k
+              for k in _.intersection oldkeys, newkeys
+                if old[k]._rev != n[k].doc._rev
+                  hash.put k, n[k].doc
           
           hash
         
-        accts = db-hash startkey: \acct, key-fn: (.name)
+        accts = db-query \accts
         
         acct-add = (s, d) ->
           local-db.put {
@@ -149,8 +153,8 @@ html
           local-db.remove d .catch log
           # optimistically update local state?
         
-        app-state = hg.state {
-          dump-state: db-array!
+        window.app-state = app-state = hg.state {
+          dump-state: db-array startkey: \a, endkey: \~
           accts
           channels: {
             acct-add

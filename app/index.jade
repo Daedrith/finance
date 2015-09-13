@@ -50,12 +50,7 @@ html
         log = console~log
         local-db = new PouchDB \finance
         
-        <- local-db.put {
-          _id: '_design/accts'
-          views:
-            accts:
-              map: (-> emit it.name if 'acct-' <= it._id < 'acct.').toString!
-        } .catch (-> log it unless it.status == 409) .then
+        # adapters
         
         db-array = (opts = {}) ->
           # TODO: avoid mutating opts?
@@ -127,41 +122,63 @@ html
           
           hash
         
+        # queries
+        
+        # TODO: create a setup in app lifecycle?
+        <- local-db.put {
+          _id: '_design/accts'
+          views:
+            accts:
+              map: (-> emit it.name if 'acct-' <= it._id < 'acct.').toString!
+        } .catch (-> log it unless it.status == 409) .then
+        
+        # TODO: setup route?
+        <- local-db.put {
+          _id: '_design/accts'
+          views:
+            accts:
+              map: (-> emit it.name if 'acct-' <= it._id < 'acct.').toString!
+        } .catch (-> log it unless it.status == 409) .then
+        
         accts = db-query \accts
         
-        acct-add = (s, d) ->
-          local-db.put {
-            d._id ? "acct-#{Date.now!}"
-            d._rev
-            d.name
-          }
-          
-        xact-add = (s, d) ->
-          postDate = createDate = Date.now!
-          local-db.put {
-            _id: "xact-#postDate"
-            createDate
-            status: \verified
-            offsets:
-              * acct: (accts![d.from]._id)
-                sub: 100 * d.amt
-              * acct: (accts![d.to]._id)
-                add: 100 * d.amt
-          }
-          
-        doc-del = (s, d) ->
-          local-db.remove d .catch log
-          # optimistically update local state?
+        # channels
+        
+        epoch = +new Date 2015 8 12 0 0 0
+        gen-id = -> Math.floor (Date.now! - epoch) / 1000
+        
+        channels =
+          acct-add: (s, d) ->
+            local-db.put {
+              d._id ? "acct-#{gen-id!}"
+              d._rev
+              d.name
+            }
+            
+          xact-add: (s, d) ->
+            postDate = createDate = Date.now!
+            local-db.put {
+              _id: "xact-#postDate"
+              createDate
+              status: \verified
+              offsets:
+                * acct: (accts![d.from]._id)
+                  sub: 100 * d.amt
+                * acct: (accts![d.to]._id)
+                  add: 100 * d.amt
+            }
+            
+          doc-del: (s, d) ->
+            local-db.remove d .catch log
+            # optimistically update local state?
         
         window.app-state = app-state = hg.state {
           dump-state: db-array startkey: \a, endkey: \~
           accts
-          channels: {
-            acct-add
-            xact-add
-            doc-del
-          }
+          channels
         }
+        
+        # rendering
         
         lbl = (n, c, a) -> h \label [n, (h c, a)]
         
@@ -185,7 +202,7 @@ html
                 h \legend 'Create transaction'
                 lbl 'From' \input { name: \from, +required, attributes: list: 'accts' }
                 lbl 'To' \input { name: \to, +required, attributes: list: 'accts' }
-                lbl 'Amount' \input { name: \amt, type: \number, +required }
+                lbl 'Amount' \input { name: \amt, type: \number, step: 0.01, +required }
                 h \button 'Create'
               ]
             ]

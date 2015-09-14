@@ -13,7 +13,11 @@ Short/medium-term plans
   - error feedback (async): unlock
   - on success: unlock, reset form
   - remote sync feedback (maybe completely out-of-channel? can we persistently attach an error condition to a particular document locally?)
-- routing / UI framework
+- routing
+  - query lifecycle: simply adding/removing query observables from a varhash state? or a more explicit state management (ugh, starting to get more stateful)
+    - not sure if state having zero listeners 
+- UI framework
+  - Bootcards?
 - server backend / storage
 - picker component?
 

@@ -54,6 +54,8 @@ html
         
         db-array = (opts = {}) ->
           # TODO: avoid mutating opts?
+          # TODO: use custom observable to remove change query
+          # - also possibly consolidate to one change feed and subscribe (borrow a pubsub impl. from somewhere?)
           arr = hg.array []
           
           if opts.startkey? and not opts.endkey?
@@ -65,10 +67,9 @@ html
           init-query = opts with { +include_docs }
           local-db.allDocs init-query
           .catch log
-          .then (res) ->
+          .then (res) !->
             arr.set res.rows.map -> hg.value it.doc
           
-          # is there overhead in having multiple local change feeds?
           if opts.startkey?
             # TODO: account for +inclusive_end
             opts.filter = -> opts.startkey <= it._id < opts.endkey
@@ -76,7 +77,7 @@ html
           change-query = opts with { +live, +include_docs, since: \now }
           
           local-db.changes change-query
-          .on \change (c) ->
+          .on \change (c) !->
             var ind
             arr.some (d, i) ->
               if d!_id == c.id
@@ -91,23 +92,35 @@ html
           
           arr
         
-        db-query = (view, opts) ->
+        # TODO: array varient
+        db-query = (view, opts = {}) ->
           hash = hg.varhash {}, hg.value
+          
+          if opts.startkey? and not opts.endkey?
+            # could better be written recursively...
+            gen-end-key = ->
+              c = (it.slice -1 .charCodeAt 0) + 1 |> String.fromCharCode
+              (it.slice 0 -1) + c
+            if typeof! opts.startkey is \Array
+              opts.endkey = [gen-end-key opts.startkey[0]]
+            else
+              opts.endkey = gen-end-key opts.startkey
+            opts.inclusive_end = false
           
           view-query = opts with { +include_docs }
           local-db.query view, view-query
           .catch log
-          .then (res) ->
+          .then (res) !->
             for r in res.rows
               hash.put r.key, r.doc
           
           change-query = opts with { +live, +include_docs, since: \now, filter: \_view, view }
           
           local-db.changes change-query
-          .on \change (c) ->
+          .on \change (c) !->
             local-db.query view, view-query
             .catch log
-            .then (res) ->
+            .then (res) !->
               old = hash!
               oldkeys = Object.keys old
               n = _.index-by res.rows, (.key)
@@ -125,22 +138,32 @@ html
         # queries
         
         # TODO: create a setup in app lifecycle?
-        <- local-db.put {
-          _id: '_design/accts'
-          views:
-            accts:
-              map: (-> emit it.name if 'acct-' <= it._id < 'acct.').toString!
-        } .catch (-> log it unless it.status == 409) .then
+        create-index = (name, map, reduce) ->
+          local-db.put {
+            _id: "_design/#name"
+            views:
+              "#name":
+                map: map.toString!
+                reduce: reduce?.toString!
+          } .catch !-> log it unless it.status == 409
         
-        # TODO: setup route?
-        <- local-db.put {
-          _id: '_design/accts'
-          views:
-            accts:
-              map: (-> emit it.name if 'acct-' <= it._id < 'acct.').toString!
-        } .catch (-> log it unless it.status == 409) .then
+        index-promises = [
+          create-index 'accts' !->
+            emit it.name if 'acct-' <= it._id < 'acct.'
+          create-index 'ledger' !->
+            return unless 'xact-' <= it._id < 'xact.'
+            post-date = +(it._id.slice 5)
+            for x in it.offsets
+              emit [x.acct, post-date]
+        ]
+        
+        <- Promise.all index-promises .then
         
         accts = db-query \accts
+        ledger = db-query \ledger {
+          startkey: ['acct-49496']
+          # TODO: reduction for running total; probably do a custom one client-side
+        }
         
         # channels
         
@@ -175,6 +198,7 @@ html
         window.app-state = app-state = hg.state {
           dump-state: db-array startkey: \a, endkey: \~
           accts
+          ledger
           channels
         }
         
@@ -188,6 +212,7 @@ html
           app-state,
           (s) ->
             chs = s.channels
+            # TODO: hg.partial
             forms ?:= [
             * h \form {
                 \ev-submit : hg.sendSubmit chs.acct-add
@@ -216,12 +241,14 @@ html
                   )
                 ]
               ]
-            * h \pre#dbdump (s.dump-state.map ->
-                h \div [
-                  (JSON.stringify it, null 2),
-                  h \span.del 'ev-click': hg.send chs.doc-del, it
-                ]
-              )
+            * h \.flex-container [
+              * h \pre#dbdump (s.dump-state.map ->
+                  h \div [
+                    (JSON.stringify it, null 2),
+                    h \span.del 'ev-click': hg.send chs.doc-del, it
+                  ])
+              * h \pre (JSON.stringify s.ledger, null 2)
+              ]
             ]
         )
         

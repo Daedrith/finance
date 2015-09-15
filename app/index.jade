@@ -47,8 +47,8 @@ html
     script
       :livescript
         {h} = hg = mercury
-        log = console~log
-        local-db = new PouchDB \finance
+        window.log = log = console~log
+        window.local-db = local-db = new PouchDB \finance
         
         # adapters
         
@@ -152,6 +152,9 @@ html
             emit it.name if 'acct-' <= it._id < 'acct.'
           create-index 'ledger' !->
             return unless 'xact-' <= it._id < 'xact.'
+            if it._deleted
+              emit null, it
+              return
             post-date = +(it._id.slice 5)
             for x in it.offsets
               emit [x.acct, post-date]
@@ -182,6 +185,7 @@ html
             postDate = createDate = Date.now!
             local-db.put {
               _id: "xact-#postDate"
+              d._rev
               createDate
               status: \verified
               offsets:

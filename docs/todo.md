@@ -4,8 +4,14 @@ Version 1
 Short/medium-term plans
 -----------------------
 
+- add README and build instructions
 - doc edit mode (hidden _id, _rev fields?)
   - kinda need to do routing
+- routing
+  - query lifecycle: simply adding/removing query observables from a varhash state? or a more explicit state management (ugh, starting to get more stateful)
+    - not sure if state having zero listeners 
+- CSS framework
+  - Bootcards?
 - implement simple account ledger view
   - tackle routing first? maybe flesh out UI more
 - flesh out form cycle:
@@ -13,13 +19,8 @@ Short/medium-term plans
   - error feedback (async): unlock
   - on success: unlock, reset form
   - remote sync feedback (maybe completely out-of-channel? can we persistently attach an error condition to a particular document locally?)
-- routing
-  - query lifecycle: simply adding/removing query observables from a varhash state? or a more explicit state management (ugh, starting to get more stateful)
-    - not sure if state having zero listeners 
-- UI framework
-  - Bootcards?
 - server backend / storage
-- picker component?
+- think of a project name
 
 Framework
 ---------
@@ -63,7 +64,6 @@ Channels
 Optimization
 ------------
 
-- change `db-array` to `db-varhash`?
 - figure out where I use plain values or obesrv-values
 - thunks
 
@@ -72,4 +72,5 @@ Version 2
 
 - Import
 - Recurring
+  - Interest rate calculation
 - Reconciliation

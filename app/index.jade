@@ -8,6 +8,10 @@ html
     
     style
       :stylus
+        body, input
+          background-color #1c1c1c
+          color #ddd
+        
         .flex-container
           display flex
           flex-flow row wrap
@@ -48,8 +52,10 @@ html
       :livescript
         {h} = hg = mercury
         window.log = log = console~log
-        window.local-db = local-db = new PouchDB \finance
         
+        # PouchDB.debug.enable '*'
+        window.local-db = local-db = new PouchDB \finance
+        local-db.on \error -> debugger
         # adapters
         
         db-array = (opts = {}) ->
@@ -108,16 +114,8 @@ html
             opts.inclusive_end = false
           
           view-query = opts with { +include_docs }
-          local-db.query view, view-query
-          .catch log
-          .then (res) !->
-            for r in res.rows
-              hash.put r.key, r.doc
           
-          change-query = opts with { +live, +include_docs, since: \now, filter: \_view, view }
-          
-          local-db.changes change-query
-          .on \change (c) !->
+          refresh = ->
             local-db.query view, view-query
             .catch log
             .then (res) !->
@@ -133,7 +131,29 @@ html
                 if old[k]._rev != n[k].doc._rev
                   hash.put k, n[k].doc
           
+          change-query = opts with { +live, since: \now, filter: \_view, view }
+          local-db.changes change-query
+          .on \change (c) !-> refresh!
+          
           hash
+        
+        db-value = (view, opts = {}) ->
+          val = hg.value null
+          
+          # TODO: serialize?
+          refresh = ->
+            local-db.query view, opts
+            .catch log
+            .then (res) ->
+              val.set res.rows.0.value
+          
+          refresh!
+          
+          change-query = { +live, since: \now, filter: \_view, view }
+          local-db.changes change-query
+          .on \change !-> refresh!
+          
+          val
         
         # queries
         
@@ -150,7 +170,7 @@ html
         index-promises = [
           create-index 'accts' !->
             emit it.name if 'acct-' <= it._id < 'acct.'
-          create-index 'ledger' !->
+          create-index 'ledger', !->
             return unless 'xact-' <= it._id < 'xact.'
             if it._deleted
               emit null, it
@@ -158,6 +178,15 @@ html
             post-date = +(it._id.slice 5)
             for x in it.offsets
               emit [x.acct, post-date]
+          create-index 'acct-sum' (!->
+            return unless 'xact-' <= it._id < 'xact.'
+            if it._deleted
+              emit null, it
+              return
+            post-date = +(it._id.slice 5)
+            for x in it.offsets
+              emit [x.acct, post-date], if x.add? then x.add else -x.sub
+          ), \_sum
         ]
         
         <- Promise.all index-promises .then
@@ -166,6 +195,9 @@ html
         ledger = db-query \ledger {
           startkey: ['acct-49496']
           # TODO: reduction for running total; probably do a custom one client-side
+        }
+        bal = db-value \acct-sum {
+          startkey: ['acct-49496']
         }
         
         # channels
@@ -180,7 +212,6 @@ html
               d._rev
               d.name
             }
-            
           xact-add: (s, d) ->
             postDate = createDate = Date.now!
             local-db.put {
@@ -194,15 +225,17 @@ html
                 * acct: (accts![d.to]._id)
                   add: 100 * d.amt
             }
-            
           doc-del: (s, d) ->
             local-db.remove d .catch log
-            # optimistically update local state?
+          toggle-full-dump: (s, d) ->
+            s.show-design-docs.set d\full-dump
+            
         
         window.app-state = app-state = hg.state {
-          dump-state: db-array startkey: \a, endkey: \~
+          dump-state: db-array!
+          show-design-docs: hg.value off
           accts
-          ledger
+          ledger: bal
           channels
         }
         
@@ -246,11 +279,16 @@ html
                 ]
               ]
             * h \.flex-container [
-              * h \pre#dbdump (s.dump-state.map ->
-                  h \div [
-                    (JSON.stringify it, null 2),
-                    h \span.del 'ev-click': hg.send chs.doc-del, it
-                  ])
+              * h \pre#dbdump [
+                * lbl 'Show full dump' \input name: \full-dump, type: \checkbox, \ev-change : hg.sendChange chs.toggle-full-dump
+                * s.dump-state
+                  .filter -> s.show-design-docs || it._id.0 != \_
+                  .map ->
+                    h \div [
+                      JSON.stringify it, null 2 .replace /\\n/g \\n
+                      h \span.del 'ev-click': hg.send chs.doc-del, it
+                    ]
+                ]
               * h \pre (JSON.stringify s.ledger, null 2)
               ]
             ]

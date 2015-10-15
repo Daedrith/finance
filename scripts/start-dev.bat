@@ -8,6 +8,9 @@ call :run LiveReloadX /min cmd /c livereloadx -s _public
 
 ::call :run Server /min cmd /c scripts\server.bat
 
+call :run Babel cmd /c babel -w -m amd -b es6.forOf -s -d _public app 
+
+
 tasklist /fi "windowtitle eq Finance - Google Chrome" | find "chrome.exe" >nul
 if errorlevel 1 start chrome http://localhost:35729
 

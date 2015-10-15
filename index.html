@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Finance</title>
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <style>body,
+input {
+  background-color: #1c1c1c;
+  color: #ddd;
+}
+.flex-container {
+  display: flex;
+  flex-flow: row wrap;
+}
+form:valid fieldset {
+  border-color: #0f0;
+}
+form label {
+  margin: 3px 0;
+  display: block;
+  text-align: right;
+}
+form label input {
+  width: 70%;
+  margin-left: 5px;
+}
+form button {
+  display: block;
+  margin-left: auto;
+}
+#dbdump .del {
+  color: #f00;
+  font-weight: bold;
+  cursor: pointer;
+}
+#dbdump .del::before {
+  content: " X";
+}
+
+    </style>
+  </head>
+  <body>
+    <script src="jspm_packages/system.js"></script>
+    <script src="config.js"></script>
+    <script>
+      'use strict';
+      System.import('app/main');
+    </script>
+  </body>
+</html>

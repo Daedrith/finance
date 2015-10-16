@@ -2,8 +2,9 @@
 
 import PouchDB from 'pouchdb';
 import hg from 'mercury';
-import {dbArray, dbQuery, dbValue} from './lib/observ-pouchdb';
+import {dbArray, dbQuery, dbValue, dbObject} from './lib/observ-pouchdb';
 import {log} from './lib/utils';
+import _ from 'underscore';
 
 let h = hg.h;
 
@@ -63,18 +64,6 @@ let indexPromises = [
 
 Promise.all(indexPromises).then(() =>
 {
-
-// TODO: obj-based PK query
-let accts = dbQuery(localDb, 'accts');
-let ledger = dbQuery(localDb, 'ledger', {
-  startkey: ['acct-49496']
-  // TODO: reduction for running total; probably do a custom one client-side
-});
-//let bal = dbValue(localDb, 'acct-sum', {
-//  startkey: ['acct-49496']
-//});
-let bal = hg.value(42);
-
 // channels
 
 let epoch = +new Date(2015, 8, 12, 0, 0, 0);
@@ -83,7 +72,7 @@ let genId = () => Math.floor((Date.now() - epoch) / 1000);
 let channels = {
   acctAdd(s, d) {
     localDb.put({
-      _id: d._id || `acct-${getId()}`,
+      _id: d._id || `acct-${genId()}`,
       _rev: d._rev,
       name: d.name
     });
@@ -97,11 +86,10 @@ let channels = {
       createDate,
       status: 'verified',
       offsets: [
-      // TODO: use s instead of accts
-      { acct: accts()[d.from]._id,
-        sub: 100 * d.amt },
-      { acct: accts()[d.to]._id,
-        add: 100 * d.amt }
+        { acct: _.findWhere(s.accts, { name: d.from })._id,
+          sub: 100 * d.amt },
+        { acct: _.findWhere(s.accts, { name: d.to })._id,
+          add: 100 * d.amt }
       ]
     });
   },
@@ -112,6 +100,18 @@ let channels = {
     s.showDesignDocs.set(d['full-dump']);
   }
 };
+
+let accts = dbObject(localDb, {
+  startkey: 'acct-'
+});
+//let ledger = dbQuery(localDb, 'ledger', {
+//  startkey: ['acct-49496']
+//  // TODO: reduction for running total; probably do a custom one client-side
+//});
+//let bal = dbValue(localDb, 'acct-sum', {
+//  startkey: ['acct-49496']
+//});
+let bal = hg.value(42);
 
 let appState = hg.state({
   dumpState: dbArray(localDb),
@@ -161,8 +161,7 @@ hg.app(
         hg.partial(renderForm2, chs),
         h('form', [
           h('datalist#accts',
-            Object.keys(s.accts).map(a =>
-              h('option', { value: a }))
+            _.map(s.accts, a => h('option', { value: a.name }))
           )
         ])
       ]),
@@ -177,7 +176,7 @@ hg.app(
                 h('span.del', { 'ev-click': hg.send(chs.docDel, d) })
               ]))
         ]),
-        h('pre', JSON.stringify(s.ledger, null, 2))
+        h('pre', JSON.stringify(s.accts, null, 2))
       ])
     ]);
   });

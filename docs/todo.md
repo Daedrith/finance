@@ -5,6 +5,7 @@ Short/medium-term plans
 -----------------------
 
 - add README and build instructions
+- modularize CSS, get rid of rest of compiled code
 - doc edit mode (hidden _id, _rev fields?)
   - kinda need to do routing
 - routing
@@ -25,11 +26,8 @@ Short/medium-term plans
 Framework
 ---------
 
-- refactoring:
-  - decide on directory structure, module system
-    - possibly a build system to glue it together
-    - port livescript to ?
-  - channel registration
+- channel registration?
+  - "API" abstractions?
 - routing
   - change listener lifecycle
   - modals?
@@ -40,7 +38,6 @@ Framework
 - CSS framework
   - bootstrap cards?
   - think about overall UI (cards are attractive; perhaps even avoid modal UIs? interesting conflict resolution)
-- `db-query` function (hg adapter for a map-reduce query)
 - decide if I want to commit to event sourcing
 
 Views

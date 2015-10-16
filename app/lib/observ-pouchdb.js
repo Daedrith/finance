@@ -4,7 +4,7 @@ import _ from 'underscore';
 import hg from 'mercury';
 import {log} from './utils'
 
-let dbArray = (localDb, opts) =>
+export let dbArray = (localDb, opts) =>
 {
   opts = opts || {};
 
@@ -47,32 +47,71 @@ let dbArray = (localDb, opts) =>
       let ind;
       arr.some((d, i) =>
       {
-        if (d()._id === c.id)
-        {
-          ind = i;
-        }
+        if (d()._id === c.id) ind = i;
       });
-      if (c.deleted)
-      {
-        arr.splice(ind, 1);
-      }
-      else if (ind != null)
-      {
-        arr.put(ind, hg.value(c.doc));
-      }
-      else
-      {
-        // insert in order?
-        arr.push(hg.value(c.doc));
-      }
+      
+      if (c.deleted) arr.splice(ind, 1);
+      else if (ind != null) arr.put(ind, hg.value(c.doc));
+      // insert in order?
+      else arr.push(hg.value(c.doc));
     });
   
   return arr;
 }
 
+export let dbObject = (localDb, opts, valueConstructor) =>
+{
+  opts = opts || {};
+
+  // TODO: avoid mutating opts?
+  // TODO: use custom observable to remove change query
+  // - also possibly consolidate to one change feed and subscribe (borrow a pubsub impl. from somewhere?)
+  let obj = hg.varhash({}, valueConstructor || hg.value);
+  
+  if (opts.startkey != null && opts.endkey == null)
+  {
+    let c = String.fromCharCode(
+      opts.startkey.slice(-1).charCodeAt(0) + 1);
+    opts.endkey = opts.startkey.slice(0, -1) + c;
+    opts.inclusive_end = false;
+  }
+  
+  // TODO: do we use struct or value?
+  let initQuery = Object.assign({ include_docs: true }, opts);
+  localDb
+    .allDocs(initQuery)
+    .catch(log)
+    .then(res =>
+    {
+      for (let d of res.rows) obj.put(d.id, d.doc);
+    });
+  
+  if (opts.startkey != null)
+  {
+    // TODO: account for inclusive_end
+    opts.filter = d => opts.startkey <= d._id < opts.endkey;
+  }
+  
+  let changeQuery = Object.assign({
+    live: true,
+    include_docs: true,
+    since: 'now'
+  }, opts);
+  
+  localDb
+    .changes(changeQuery)
+    .on('change', c =>
+    {
+      if (c.deleted) obj.del(c.id);
+      else obj.put(c.id, c.doc);
+    });
+  
+  return obj;
+}
+
 // TODO: array varient
 // TODO: custom hg.partial comparator based on _rev
-let dbQuery = (localDb, view, opts) =>
+export let dbQuery = (localDb, view, opts) =>
 {
   opts = opts || {};
   
@@ -142,7 +181,7 @@ let dbQuery = (localDb, view, opts) =>
   return hash;
 };
 
-let dbValue = (localDb, view, opts) =>
+export let dbValue = (localDb, view, opts) =>
 {
   opts = opts || {};
   
@@ -170,10 +209,4 @@ let dbValue = (localDb, view, opts) =>
     .on('change', refresh);
   
   return val;
-};
-
-export {
-  dbArray,
-  dbQuery,
-  dbValue
 };

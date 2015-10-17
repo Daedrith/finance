@@ -6,6 +6,9 @@ System.config({
     "optional": [
       "runtime",
       "optimisation.modules.system"
+    ],
+    blacklist: [
+      "es6.forOf"
     ]
   },
   paths: {

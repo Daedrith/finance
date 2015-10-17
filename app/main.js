@@ -10,6 +10,7 @@ let h = hg.h;
 
 // PouchDB.debug.enable('*');
 let localDb = new PouchDB('finance');
+window.localDb = localDb;
 localDb.on('error', () => { debugger; });
 
 let createIndex = (name, map, reduce) =>
@@ -27,39 +28,45 @@ let createIndex = (name, map, reduce) =>
   });
 };
 
+let queries = {
+  ledger(d)
+  {
+    debugger;
+    if (d._id < 'xact-' || 'xact.' <= d._id) return;
+    
+    if (d._deleted)
+    {
+      emit(null, d);
+      return;
+    }
+    
+    let postDate = Number(d._id.slice(5));
+    for (let x of d.offsets)
+    {
+      emit([x.acct, postDate]);
+    }
+  },
+  acctSum(d)
+  {
+    if (d._id < 'xact-' || 'xact.' <= d._id) return;
+    
+    if (d._deleted)
+    {
+      emit(null, d);
+      return;
+    }
+    
+    let postDate = Number(d._id.slice(5));
+    for (let x of d.offsets)
+    {
+      emit([x.acct, postDate], x.add != null ? x.add : -x.sub);
+    }
+  }
+}
+
 let indexPromises = [
-  createIndex('ledger', d =>
-  {
-    if (d._id < 'xact-' || 'xact.' <= d._id) return;
-    
-    if (d._deleted)
-    {
-      emit(null, d);
-      return;
-    }
-    
-    let postDate = Number(d._id.slice(5));
-    for (let x of it.offsets)
-    {
-      emit([x,acct, postDate]);
-    }
-  }),
-  createIndex('acct-sum', d =>
-  {
-    if (d._id < 'xact-' || 'xact.' <= d._id) return;
-    
-    if (d._deleted)
-    {
-      emit(null, d);
-      return;
-    }
-    
-    let postDate = Number(d._id.slice(5));
-    for (let x of it.offsets)
-    {
-      emit([x,acct, postDate], x.add != null ? x.add : -x.sub);
-    }
-  }, '_sum')
+  createIndex('ledger', queries.ledger),
+  createIndex('acct-sum', queries.acctSum, '_sum')
 ];
 
 Promise.all(indexPromises).then(() =>
@@ -86,9 +93,9 @@ let channels = {
       createDate,
       status: 'verified',
       offsets: [
-        { acct: _.findWhere(s.accts, { name: d.from })._id,
+        { acct: _.findWhere(s.accts(), { name: d.from })._id,
           sub: 100 * d.amt },
-        { acct: _.findWhere(s.accts, { name: d.to })._id,
+        { acct: _.findWhere(s.accts(), { name: d.to })._id,
           add: 100 * d.amt }
       ]
     });
@@ -104,10 +111,10 @@ let channels = {
 let accts = dbObject(localDb, {
   startkey: 'acct-'
 });
-//let ledger = dbQuery(localDb, 'ledger', {
-//  startkey: ['acct-49496']
-//  // TODO: reduction for running total; probably do a custom one client-side
-//});
+let ledger = dbQuery(localDb, 'ledger', {
+  startkey: ['acct-2884365']
+  // TODO: reduction for running total; probably do a custom one client-side
+});
 //let bal = dbValue(localDb, 'acct-sum', {
 //  startkey: ['acct-49496']
 //});
@@ -117,7 +124,7 @@ let appState = hg.state({
   dumpState: dbArray(localDb),
   showDesignDocs: hg.value(false),
   accts,
-  ledger: bal,
+  ledger,
   channels
 });
 
@@ -176,7 +183,7 @@ hg.app(
                 h('span.del', { 'ev-click': hg.send(chs.docDel, d) })
               ]))
         ]),
-        h('pre', JSON.stringify(s.accts, null, 2))
+        h('pre', JSON.stringify(s.ledger, null, 2))
       ])
     ]);
   });

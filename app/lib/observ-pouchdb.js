@@ -178,6 +178,8 @@ export let dbQuery = (localDb, view, opts) =>
     .changes(changeQuery)
     .on('change', c => refresh());
   
+  refresh();
+  
   return hash;
 };
 

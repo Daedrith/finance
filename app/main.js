@@ -1,37 +1,23 @@
-'use strict';
-
-import PouchDB from 'pouchdb';
 import hg from 'mercury';
-import {dbArray, dbQuery, dbValue, dbObject} from './lib/observ-pouchdb';
-import {log} from './lib/utils';
+import Router from 'mercury-router';
+import anchor from 'mercury-router/anchor';
+import routeView from 'mercury-router/route-view';
 import _ from 'underscore';
 
-let h = hg.h;
+import QueryManager from './lib/observ-pouchdb';
+import {log} from './lib/utils';
 
-// PouchDB.debug.enable('*');
-let localDb = new PouchDB('finance');
-window.localDb = localDb;
-localDb.on('error', () => { debugger; });
+import appdb from './appdb';
 
-let createIndex = (name, map, reduce) =>
-{
-  map = map.toString();
-  reduce = reduce && reduce.toString();
-  return localDb.put({
-    _id: "_design/" + name,
-    views: {
-      [name]: { map, reduce }
-    }
-  }).catch(e =>
-  {
-    if (e.status !== 409) log(e);
-  });
-};
+var dbq = new QueryManager(appdb);
+
+let {h} = hg;
+
+//export const __hotReload = true;
 
 let queries = {
   ledger(d)
   {
-    debugger;
     if (d._id < 'xact-' || 'xact.' <= d._id) return;
     
     if (d._deleted)
@@ -65,8 +51,8 @@ let queries = {
 }
 
 let indexPromises = [
-  createIndex('ledger', queries.ledger),
-  createIndex('acct-sum', queries.acctSum, '_sum')
+  appdb.createIndex('ledger', queries.ledger),
+  appdb.createIndex('acct-sum', queries.acctSum, '_sum')
 ];
 
 Promise.all(indexPromises).then(() =>
@@ -78,7 +64,7 @@ let genId = () => Math.floor((Date.now() - epoch) / 1000);
 
 let channels = {
   acctAdd(s, d) {
-    localDb.put({
+    appdb.put({
       _id: d._id || `acct-${genId()}`,
       _rev: d._rev,
       name: d.name
@@ -87,7 +73,7 @@ let channels = {
   xactAdd(s, d) {
     let postDate = createDate = Date.now();
     let createDate = postDate;
-    localDb.put({
+    appdb.put({
       _id: 'xact-' + postDate,
       _rev: d._rev,
       createDate,
@@ -101,27 +87,27 @@ let channels = {
     });
   },
   docDel(s, d) {
-    localDb.remove(d).catch(log);
+    appdb.remove(d).catch(log);
   },
   toggleFullDump(s, d) {
     s.showDesignDocs.set(d['full-dump']);
   }
 };
 
-let accts = dbObject(localDb, {
+let accts = dbq.keyObject({
   startkey: 'acct-'
 });
-let ledger = dbQuery(localDb, 'ledger', {
+let ledger = dbq.queryObject('ledger', {
   startkey: ['acct-2884365']
   // TODO: reduction for running total; probably do a custom one client-side
 });
-//let bal = dbValue(localDb, 'acct-sum', {
-//  startkey: ['acct-49496']
+//let bal = queryValue('acct-sum', {
+//  startkey: ['acct-2884365']
 //});
 let bal = hg.value(42);
 
 let appState = hg.state({
-  dumpState: dbArray(localDb),
+  dumpState: dbq.keyArray(),
   showDesignDocs: hg.value(false),
   accts,
   ledger,

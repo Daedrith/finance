@@ -7,8 +7,9 @@ System.config({
       "runtime",
       "optimisation.modules.system"
     ],
-    blacklist: [
-      "es6.forOf"
+    "blacklist": [
+      "es6.forOf",
+      "es6.spread"
     ]
   },
   paths: {
@@ -17,12 +18,15 @@ System.config({
   },
 
   map: {
-    "pouchdb": "//cdn.jsdelivr.net/pouchdb/5.0.0/pouchdb.js",
-    
+    "observ": "lib/observ2",
+    "observ/computed": "npm:observ@0.2.0/computed",
+    "observ/watch": "npm:observ@0.2.0/watch",
     "babel": "npm:babel-core@5.8.25",
     "babel-runtime": "npm:babel-runtime@5.8.25",
     "core-js": "npm:core-js@1.2.1",
     "mercury": "npm:mercury@14.0.0",
+    "mercury-router": "npm:mercury-router@1.0.9",
+    "pouchdb": "//cdn.jsdelivr.net/pouchdb/5.0.0/pouchdb.js",
     "underscore": "npm:underscore@1.8.3",
     "github:jspm/nodelibs-assert@0.1.0": {
       "assert": "npm:assert@1.3.0"
@@ -52,6 +56,9 @@ System.config({
     },
     "github:jspm/nodelibs-process@0.1.2": {
       "process": "npm:process@0.11.2"
+    },
+    "github:jspm/nodelibs-querystring@0.1.0": {
+      "querystring": "npm:querystring@0.2.0"
     },
     "github:jspm/nodelibs-stream@0.1.0": {
       "stream-browserify": "npm:stream-browserify@1.0.0"
@@ -128,6 +135,13 @@ System.config({
       "error": "npm:error@4.4.0",
       "raf": "npm:raf@2.0.4"
     },
+    "npm:mercury-router@1.0.9": {
+      "geval": "npm:geval@2.1.1",
+      "global": "npm:global@4.3.0",
+      //"observ": "npm:observ@0.2.0",
+      "route-map": "npm:route-map@0.1.0",
+      "virtual-dom": "npm:virtual-dom@1.3.0"
+    },
     "npm:mercury@14.0.0": {
       "child_process": "github:jspm/nodelibs-child_process@0.1.0",
       "console": "github:jspm/nodelibs-console@0.1.0",
@@ -136,7 +150,7 @@ System.config({
       "geval": "npm:geval@2.1.1",
       "http": "github:jspm/nodelibs-http@1.7.1",
       "main-loop": "npm:main-loop@3.2.0",
-      "observ": "npm:observ@0.2.0",
+      //"observ": "npm:observ@0.2.0",
       "observ-array": "npm:observ-array@3.2.1",
       "observ-struct": "npm:observ-struct@5.0.1",
       "observ-varhash": "npm:observ-varhash@1.0.6",
@@ -159,15 +173,15 @@ System.config({
     },
     "npm:observ-array@3.2.1": {
       "adiff": "npm:adiff@0.2.13",
-      "observ": "npm:observ@0.2.0",
+      //"observ": "npm:observ@0.2.0",
       "xtend": "npm:xtend@3.0.0"
     },
     "npm:observ-struct@5.0.1": {
-      "observ": "npm:observ@0.2.0",
+      //"observ": "npm:observ@0.2.0",
       "xtend": "npm:xtend@3.0.0"
     },
     "npm:observ-varhash@1.0.6": {
-      "observ": "npm:observ@0.2.0",
+      //"observ": "npm:observ@0.2.0",
       "process": "github:jspm/nodelibs-process@0.1.2",
       "xtend": "npm:xtend@3.0.0"
     },
@@ -198,6 +212,11 @@ System.config({
       "process": "github:jspm/nodelibs-process@0.1.2",
       "stream-browserify": "npm:stream-browserify@1.0.0",
       "string_decoder": "npm:string_decoder@0.10.31"
+    },
+    "npm:route-map@0.1.0": {
+      "path-to-regexp": "npm:path-to-regexp@0.0.2",
+      "querystring": "github:jspm/nodelibs-querystring@0.1.0",
+      "url": "github:jspm/nodelibs-url@0.1.0"
     },
     "npm:stream-browserify@1.0.0": {
       "events": "github:jspm/nodelibs-events@0.1.1",

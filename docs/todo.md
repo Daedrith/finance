@@ -26,6 +26,21 @@ Short/medium-term plans
 Framework
 ---------
 
+- Rework data layer:
+  - Views
+    - Put view definitions in their own modules
+    - Maybe have some kind of background process to add them?
+    - Pass the view into the query observ factories
+      - If view not initialized yet, that will be kicked off then
+      - We still return the value synchronously, it will be empty until view is populated
+        - Maybe figure out some kind of side-channel for status?
+  - Manager class (unless I can think of a more FRP way of doing this)
+    - Only one change feed subscription to PouchDB, which is then filtered to the observables
+      - Figure out feed listener lifecycle
+        - Tie it to observ subscription lifecycle?
+          - Might be the best; subscriptions should be disposed when removed from the top-level state
+            - Will have to be careful about computed observables
+        - Create an explicit lifecycle e.g. tied to the router
 - channel registration?
   - "API" abstractions?
 - routing
@@ -43,6 +58,8 @@ Framework
 Views
 -----
 
+- top level view
+  - navigation, notifications, etc.
 - acct add/edit
   - use the same channel (_id/_rev in hidden field?)
 - general ledger

@@ -18,9 +18,9 @@ System.config({
   },
 
   map: {
-    "observ": "lib/observ2",
-    "observ/computed": "npm:observ@0.2.0/computed",
-    "observ/watch": "npm:observ@0.2.0/watch",
+    //"observ": "lib/observ2",
+    //"observ/computed": "npm:observ@0.2.0/computed",
+    //"observ/watch": "npm:observ@0.2.0/watch",
     "babel": "npm:babel-core@5.8.25",
     "babel-runtime": "npm:babel-runtime@5.8.25",
     "core-js": "npm:core-js@1.2.1",

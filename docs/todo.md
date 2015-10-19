@@ -41,20 +41,26 @@ Framework
           - Might be the best; subscriptions should be disposed when removed from the top-level state
             - Will have to be careful about computed observables
         - Create an explicit lifecycle e.g. tied to the router
+- Separate app init module, with custom __hotReload function?
+  - Worse case, we store some references as global variables
+- tagged template function for creating vdom nodes... jade-like syntax?
 - channel registration?
   - "API" abstractions?
+  - might forego channels, use own high-level functions (just need to ensure the functions attached to the vdom tree are referentially equal)
 - routing
-  - change listener lifecycle
   - modals?
-- form generation?
-  - form component for better composition?
-  - validation
-    - html5 validation rocks. However, need to think about errors down the line (e.g. local-db error, remote db error). Command-Query Separation tells us that the command should be fire-and-forget, and 
 - CSS framework
   - bootstrap cards?
   - think about overall UI (cards are attractive; perhaps even avoid modal UIs? interesting conflict resolution)
-- decide if I want to commit to event sourcing
+- Turn label helper function into labelled control component?
+  - Might be a first easy step into 
 
+- form generation?
+  - form component for better composition?
+  - validation
+    - html5 validation rocks. However, need to think about errors down the line (e.g. local-db error, remote db error). Command-Query Separation tells us that the command should be fire-and-forget, and... (forgot what I was going to write here)
+  - would need a schema system... probably overkill for now
+  
 Views
 -----
 

@@ -5,7 +5,9 @@ import hg from 'mercury'; // TOOD: import individual modules
 //import observArray from 'mercury/observ-array';
 //import observVarhash from 'mercury/observ-varhash';
 //import observValue from 'observ';
-import {log} from './utils'
+
+import Observ2 from '../lib/observ2';
+import {log} from './utils';
 
 let { array: observArray, varhash: observVarhash, value: observValue } = hg;
 
@@ -25,7 +27,8 @@ export default class
     // TODO: avoid mutating opts?
     // TODO: use custom observable to remove change query
     // - also possibly consolidate to one change feed and subscribe (borrow a pubsub impl. from somewhere?)
-    let arr = observArray([]);
+    let arr = [];
+    let observ = Observ2(arr);
     
     if (opts.startkey != null && opts.endkey == null)
     {
@@ -35,42 +38,55 @@ export default class
       opts.inclusive_end = false;
     }
     
-    // TODO: do we use struct or value?
     let initQuery = Object.assign({ include_docs: true }, opts);
     this.db
       .allDocs(initQuery)
       .catch(log)
-      .then(res => arr.set(res.rows.map(d => observValue(d.doc))));
+      .then(res => observ.set(arr = res.rows.map(d => observValue(d.doc))));
     
-    if (opts.startkey != null)
+    let publish = _.debounce(() =>
+    {
+      observ.set(arr);
+      arr = arr.slice(0); // TODO: make lazy (copy before mutation), track when copy isn't needed e.g. element mutation
+    }, 1); // maybe a setImmediate version, or zero?
+    
+    let processChange = c =>
     {
       // TODO: account for inclusive_end
-      opts.filter = d => opts.startkey <= d._id < opts.endkey;
-    }
-    
-    let changeQuery = Object.assign({
-      live: true,
-      include_docs: true,
-      since: 'now'
-    }, opts);
-    
-    this.db
-      .changes(changeQuery)
-      .on('change', c =>
+      if (opts.startkey != null
+        && !(c => opts.startkey <= c.id && c.id < opts.endkey))
       {
-        let ind;
-        arr.some((d, i) =>
+        return;
+      }
+      
+      let ind;
+      arr.some((d, i) =>
+      {
+        if (d()._id === c.id)
         {
-          if (d()._id === c.id) ind = i;
-        });
-        
-        if (c.deleted) arr.splice(ind, 1);
-        else if (ind != null) arr.put(ind, observValue(c.doc));
-        // insert in order?
-        else arr.push(observValue(c.doc));
+          ind = i;
+          return true;
+        }
       });
+      
+      if (c.deleted) arr.splice(ind, 1);
+      else if (ind != null) arr[ind].set(c.doc);
+      // insert in order?
+      else arr.push(observValue(c.doc));
+      
+      publish();
+    };
     
-    return arr;
+    observ[Observ2.listeners].on('add', (l, ls) =>
+    {
+      if (ls.length === 1) this._changes.on('change', processChange);
+    });
+    observ[Observ2.listeners].on('remove', (l, ls) =>
+    {
+      if (ls.length === 0) this._changes.removeListener('change', processChange);
+    });
+    
+    return observ;
   }
 
   keyObject(opts, valueConstructor)

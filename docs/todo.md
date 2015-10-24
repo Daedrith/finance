@@ -27,34 +27,49 @@ Framework
 ---------
 
 - Rework data layer:
-  - Views
+  - Views (of the map/reduce kind)
     - Put view definitions in their own modules
-    - Maybe have some kind of background process to add them?
+    - Maybe have some kind of background process to add them eagerly?
+      - Should be unnecessary, 99% of the time they haven't changed and are already there
+      - Should detect if view definition differs from what's in the design doc
     - Pass the view into the query observ factories
       - If view not initialized yet, that will be kicked off then
       - We still return the value synchronously, it will be empty until view is populated
         - Maybe figure out some kind of side-channel for status?
   - Manager class (unless I can think of a more FRP way of doing this)
     - Only one change feed subscription to PouchDB, which is then filtered to the observables
-      - Figure out feed listener lifecycle
-        - Tie it to observ subscription lifecycle?
-          - Might be the best; subscriptions should be disposed when removed from the top-level state
-            - Will have to be careful about computed observables
-        - Create an explicit lifecycle e.g. tied to the router
+      - Might be premature optimization; either test or look at source code
 - Separate app init module, with custom __hotReload function?
   - Worse case, we store some references as global variables
-- tagged template function for creating vdom nodes... jade-like syntax?
-- channel registration?
-  - "API" abstractions?
-  - might forego channels, use own high-level functions (just need to ensure the functions attached to the vdom tree are referentially equal)
-- routing
-  - modals?
+- Routing
+  - Component-based pages
+    - Since components have an init function, we can construct the state object with the proper observables
+    - Unfortunately, our signal that the (nested) pdb-observables are no longer needed is when the component itself is no longer being observed... perhaps have to explicitly dispose
+    - Interface:
+      - (construction): normal component instantiation
+      - ready: optional promise for async initialization
+      - dispose: optional method
+      - focus/blur?
+  - Figure out async navigation
+    - User clicks a link, we start loading the requested component
+      - Component might be created, but also need to know when all of its dependent data (or at least the data we want to have for the initial render) is ready
+      - Fade in overlay? Or a non-modal indicator
+    - Route changes
+      - Keep a (limited) stack of previous pages? Useful for non-persisted page state, e.g. state of filters
+    - If user presses escape, or navigates somewhere else, cancel first navigation
+    - Could be fancy with transitions, but entirely unnecessary
+  - Figure out parameterization
+    - e.g. /foo/:id/edit
+    - import foo/index first, discover routes
+    - put off to later; can just use querystring for now
+- channel registration? Probably solved by component-based pages
 - CSS framework
   - bootstrap cards?
   - think about overall UI (cards are attractive; perhaps even avoid modal UIs? interesting conflict resolution)
 - Turn label helper function into labelled control component?
   - Might be a first easy step into 
 
+- tagged template function for creating vdom nodes... jade-like syntax?
 - form generation?
   - form component for better composition?
   - validation

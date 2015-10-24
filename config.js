@@ -16,11 +16,13 @@ System.config({
     "github:*": "jspm_packages/github/*",
     "npm:*": "jspm_packages/npm/*"
   },
+  meta: {
+    "//cdn.jsdelivr.net/pouchdb/5.0.0/pouchdb.js": {
+      integrity: 'sha384-yZnRIuJqcu3aV491h6RhT0iv5l7q0Dt3L1M52s7/plUzD7bD788RPTmnZSXCdBJ+'
+    }
+  },
 
   map: {
-    //"observ": "lib/observ2",
-    //"observ/computed": "npm:observ@0.2.0/computed",
-    //"observ/watch": "npm:observ@0.2.0/watch",
     "babel": "npm:babel-core@5.8.25",
     "babel-runtime": "npm:babel-runtime@5.8.25",
     "core-js": "npm:core-js@1.2.1",
@@ -138,7 +140,7 @@ System.config({
     "npm:mercury-router@1.0.9": {
       "geval": "npm:geval@2.1.1",
       "global": "npm:global@4.3.0",
-      //"observ": "npm:observ@0.2.0",
+      "observ": "npm:observ@0.2.0",
       "route-map": "npm:route-map@0.1.0",
       "virtual-dom": "npm:virtual-dom@1.3.0"
     },
@@ -150,7 +152,7 @@ System.config({
       "geval": "npm:geval@2.1.1",
       "http": "github:jspm/nodelibs-http@1.7.1",
       "main-loop": "npm:main-loop@3.2.0",
-      //"observ": "npm:observ@0.2.0",
+      "observ": "npm:observ@0.2.0",
       "observ-array": "npm:observ-array@3.2.1",
       "observ-struct": "npm:observ-struct@5.0.1",
       "observ-varhash": "npm:observ-varhash@1.0.6",
@@ -173,15 +175,15 @@ System.config({
     },
     "npm:observ-array@3.2.1": {
       "adiff": "npm:adiff@0.2.13",
-      //"observ": "npm:observ@0.2.0",
+      "observ": "npm:observ@0.2.0",
       "xtend": "npm:xtend@3.0.0"
     },
     "npm:observ-struct@5.0.1": {
-      //"observ": "npm:observ@0.2.0",
+      "observ": "npm:observ@0.2.0",
       "xtend": "npm:xtend@3.0.0"
     },
     "npm:observ-varhash@1.0.6": {
-      //"observ": "npm:observ@0.2.0",
+      "observ": "npm:observ@0.2.0",
       "process": "github:jspm/nodelibs-process@0.1.2",
       "xtend": "npm:xtend@3.0.0"
     },

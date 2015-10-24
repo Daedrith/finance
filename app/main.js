@@ -4,17 +4,16 @@ import anchor from 'mercury-router/anchor';
 import routeView from 'mercury-router/route-view';
 import _ from 'underscore';
 
-import QueryManager from './lib/observ-pouchdb';
 import {log} from './lib/utils';
 
 import appdb from './appdb';
-
-var dbq = new QueryManager(appdb);
+import dbq from './querydb';
 
 let {h} = hg;
 
 //export const __hotReload = true;
 
+// TODO: export to modules
 let queries = {
   ledger(d)
   {
@@ -50,6 +49,7 @@ let queries = {
   }
 }
 
+// initialize in QueryManager
 let indexPromises = [
   appdb.createIndex('ledger', queries.ledger),
   appdb.createIndex('acct-sum', queries.acctSum, '_sum')

@@ -2,14 +2,15 @@
 
 import _ from 'underscore';
 import hg from 'mercury'; // TOOD: import individual modules
-//import observArray from 'mercury/observ-array';
-//import observVarhash from 'mercury/observ-varhash';
-//import observValue from 'observ';
+//import ObservArray from 'mercury/observ-array';
+//import ObservVarhash from 'mercury/observ-varhash';
+//import ObservValue from 'observ';
 
-import Observ2 from '../lib/observ2';
+//import Observ2 from '../../lib/observ2';
+let Observ2 = hg.value;
 import {log} from './utils';
 
-let { array: observArray, varhash: observVarhash, value: observValue } = hg;
+let { array: ObservArray, varhash: ObservVarhash, value: ObservValue } = hg;
 
 export default class
 {
@@ -24,12 +25,9 @@ export default class
   {
     opts = opts || {};
 
-    // TODO: avoid mutating opts?
-    // TODO: use custom observable to remove change query
-    // - also possibly consolidate to one change feed and subscribe (borrow a pubsub impl. from somewhere?)
-    let arr = [];
-    let observ = Observ2(arr);
+    let observ = ObservArray([]);
     
+    // TODO: avoid mutating opts?
     if (opts.startkey != null && opts.endkey == null)
     {
       let c = String.fromCharCode(
@@ -39,54 +37,44 @@ export default class
     }
     
     let initQuery = Object.assign({ include_docs: true }, opts);
-    this.db
+    let ready = this.db
       .allDocs(initQuery)
       .catch(log)
-      .then(res => observ.set(arr = res.rows.map(d => observValue(d.doc))));
-    
-    let publish = _.debounce(() =>
-    {
-      observ.set(arr);
-      arr = arr.slice(0); // TODO: make lazy (copy before mutation), track when copy isn't needed e.g. element mutation
-    }, 1); // maybe a setImmediate version, or zero?
-    
-    let processChange = c =>
-    {
-      // TODO: account for inclusive_end
-      if (opts.startkey != null
-        && !(c => opts.startkey <= c.id && c.id < opts.endkey))
+      .then(res =>
       {
-        return;
-      }
+        observ.set(res.rows.map(d => ObservValue(d.doc)));
       
-      let ind;
-      arr.some((d, i) =>
-      {
-        if (d()._id === c.id)
+        let processChange = c =>
         {
-          ind = i;
-          return true;
-        }
+          // TODO: account for inclusive_end
+          if (opts.startkey != null
+            && !(c => opts.startkey <= c.id && c.id < opts.endkey))
+          {
+            return;
+          }
+          
+          let ind;
+          observ.some((d, i) =>
+          {
+            if (d()._id === c.id)
+            {
+              ind = i;
+              return true;
+            }
+          });
+          
+          if (c.deleted) observ.splice(ind, 1);
+          else if (ind != null) observ.get(ind).set(c.doc);
+          // insert in order?
+          else observ.push(ObservValue(c.doc));
+        };
+        
+        this._changes.on('change', processChange);
+        observ.dispose = () => this._changes.removeListener('change', processChange);
+        return observ;
       });
-      
-      if (c.deleted) arr.splice(ind, 1);
-      else if (ind != null) arr[ind].set(c.doc);
-      // insert in order?
-      else arr.push(observValue(c.doc));
-      
-      publish();
-    };
     
-    observ[Observ2.listeners].on('add', (l, ls) =>
-    {
-      if (ls.length === 1) this._changes.on('change', processChange);
-    });
-    observ[Observ2.listeners].on('remove', (l, ls) =>
-    {
-      if (ls.length === 0) this._changes.removeListener('change', processChange);
-    });
-    
-    return observ;
+    return opts.async ? ready : observ;
   }
 
   keyObject(opts, valueConstructor)
@@ -96,7 +84,7 @@ export default class
     // TODO: avoid mutating opts?
     // TODO: use custom observable to remove change query
     // - also possibly consolidate to one change feed and subscribe (borrow a pubsub impl. from somewhere?)
-    let obj = observVarhash({}, valueConstructor || observValue);
+    let obj = ObservVarhash({}, valueConstructor || ObservValue);
     
     if (opts.startkey != null && opts.endkey == null)
     {
@@ -145,7 +133,7 @@ export default class
   {
     opts = opts || {};
     
-    let hash = observVarhash({}, observValue);
+    let hash = ObservVarhash({}, ObservValue);
     
     if (opts.startkey != null && opts.endkey == null)
     {
@@ -217,7 +205,7 @@ export default class
   {
     opts = opts || {};
     
-    let val = observValue(null);
+    let val = ObservValue(null);
     
     // TODO: serialize?
     let refresh = () =>

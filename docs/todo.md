@@ -8,9 +8,6 @@ Short/medium-term plans
 - modularize CSS, get rid of rest of compiled code
 - doc edit mode (hidden _id, _rev fields?)
   - kinda need to do routing
-- routing
-  - query lifecycle: simply adding/removing query observables from a varhash state? or a more explicit state management (ugh, starting to get more stateful)
-    - not sure if state having zero listeners 
 - CSS framework
   - Bootcards?
 - implement simple account ledger view
@@ -26,6 +23,7 @@ Short/medium-term plans
 Framework
 ---------
 
+- Hot reload: remove imperative code from top-level / main module, or do some custom __hotReload logic
 - Rework data layer:
   - Views (of the map/reduce kind)
     - Put view definitions in their own modules
@@ -36,20 +34,35 @@ Framework
       - If view not initialized yet, that will be kicked off then
       - We still return the value synchronously, it will be empty until view is populated
         - Maybe figure out some kind of side-channel for status?
-  - Manager class (unless I can think of a more FRP way of doing this)
+  - Manager class
+    - Doesn't feel very functional / FRP
     - Only one change feed subscription to PouchDB, which is then filtered to the observables
       - Might be premature optimization; either test or look at source code
-- Separate app init module, with custom __hotReload function?
-  - Worse case, we store some references as global variables
+  - Future: rewind/fast-forward
 - Routing
-  - Component-based pages
+  - Component-based pages... page components... PCs
+    - they're not really "components" in the mercury sense anymore
     - Since components have an init function, we can construct the state object with the proper observables
     - Unfortunately, our signal that the (nested) pdb-observables are no longer needed is when the component itself is no longer being observed... perhaps have to explicitly dispose
+    - First of all, should decide whether PCs should manage their subscriptions directly, or they're just given the value they edit, and a higher level of abstraction manages query/persistence
+      - PCs end up being tightly coupled to the app/query manager singletons
+      - Probably do it the simpler/perhaps more unclean way for now, try to refactor later
     - Interface:
-      - (construction): normal component instantiation
+      - Should make PCs server-friendly
+      - static load instead?
+        - Does this solve parameterization?
+        - It seems like this would just go in a different module? the routing scheme?
+          - resource alloc and dispose in separate modules :| but maybe I can make disposal automatic enough?
+          - simplifying the number of modules is good, too, though
+      - (construction): seems mostly just internally useful
+      - state: the (observable) to put in the app state
       - ready: optional promise for async initialization
+        - don't like this... no use for a partially initialized object, other than to call bugs; really want async factory...
       - dispose: optional method
+        - tempting to make this dynamic, but can do so later
       - focus/blur?
+  - For the typical "form" PC, is it wise to render directly from the db query?
+    - probably not in "edit" mode
   - Figure out async navigation
     - User clicks a link, we start loading the requested component
       - Component might be created, but also need to know when all of its dependent data (or at least the data we want to have for the initial render) is ready
@@ -62,6 +75,7 @@ Framework
     - e.g. /foo/:id/edit
     - import foo/index first, discover routes
     - put off to later; can just use querystring for now
+  - History stack
 - channel registration? Probably solved by component-based pages
 - CSS framework
   - bootstrap cards?

@@ -1,8 +1,7 @@
 import hg from 'mercury';
 import Router from 'mercury-router';
-import anchor from 'mercury-router/anchor';
-import routeView from 'mercury-router/route-view';
 import _ from 'underscore';
+import co from 'co';
 
 import {log} from './lib/utils';
 
@@ -10,6 +9,7 @@ import appdb from './appdb';
 import dbq from './querydb';
 
 let {h} = hg;
+let {anchor} = Router;
 
 //export const __hotReload = true;
 
@@ -106,15 +106,109 @@ let ledger = dbq.queryObject('ledger', {
 //});
 let bal = hg.value(42);
 
+let currentUrl = hg.computed([Router()], href => new URL(href));
+
+// TODO: on cold load, currentUrl will be out of sync with actual location, because we need to display a loading page; maybe a special flag?
+// TODO: should these props be hg.value()s?
+let navState = hg.struct({
+  // document.location
+  currentUrl,
+  // observable returned by page component
+  // there's an observer that listens and passes the value to replaceState
+  currentState: null,
+  activeRequest: null
+});
+
+
+
 let appState = hg.state({
   dumpState: dbq.keyArray(),
   showDesignDocs: hg.value(false),
   accts,
   ledger,
+  
+  // not sure about putting something here that isn't serializable...
+  // not to mention, mutable props; custom thunks?
+  navState,
+  
   channels
 });
 
+let pageModules = new Map();
+resolvePage = co.wrap(function* (url0, pageState)
+{
+  let url = url0.hash[0] === '/'
+    // TODO: look for fragment in hash
+    ? new URL(url0.origin + url0.hash.slice(1))
+    : url0;
+  
+  let segments = url.pathname.split('/').slice(1);
+  
+  let seg = segments.shift();
+  let module = pageModules.get(seg);
+  if (!module)
+  {
+    // TOOD: catch for module not found?
+    module = yield System.import(seg);
+    pageModules.put(seg, module);
+  }
+  
+  // TODO: cancellation
+
+  // TODO: figure out routing protocol, etc.
+});
+
 // rendering
+
+function handleClick(e)
+{
+  if (e.ctrlKey || e.shiftKey) return;
+  
+  e.preventDefault();
+  
+  // TODO: use URL constructor to clone?
+  let url = e.target;
+  
+  let segments = url.pathname.split('/');
+  segments.shift(); // path always starts with /
+  // compatibility: use hash (refreshing becomes a pain otherwise, until we have server rendering)
+  [].push.apply(segments, url.hash.split('/'));
+  
+  // TODO: load module to handle routing
+  // make this function async?
+  //let resource = segments[0];
+  //let pm = appState.pageModules.get(resource)
+  //if (!pm)
+  //{
+  //  resource = await System.import('pages/' + resource);
+  //}
+  
+  
+  appState.route.set(url.href);
+}
+
+let a = (text, href, opts) =>
+{
+  opts = opts || {};
+  return h('a', Object.assign(opts, {
+    href,
+    'ev-click': handleClick
+  }), text);
+};
+
+function renderNav()
+{
+  return h('nav',
+    h('ul', [
+      h('li', a('form1', '#acct')),
+      h('li', a('form1', '#xact'))
+    ])
+  );
+}
+
+function renderRoute(route, pageState)
+{
+}
 
 let lbl = (n, c, a) => h('label', [n, h(c, a)]);
 
@@ -141,7 +235,7 @@ function renderForm2(chs)
     ]));
 }
 
-hg.app(
+let stop = hg.app(
   document.body,
   appState,
   (s) =>
@@ -150,6 +244,7 @@ hg.app(
     
     return h('div', [
       h('.flex-container', [
+        hg.partial(renderNav),
         hg.partial(renderForm1, chs),
         hg.partial(renderForm2, chs),
         h('form', [
@@ -169,7 +264,7 @@ hg.app(
                 h('span.del', { 'ev-click': hg.send(chs.docDel, d) })
               ]))
         ]),
-        h('pre', JSON.stringify(s.ledger, null, 2))
+        h('pre', JSON.stringify(s.navState, null, 2))
       ])
     ]);
   });

@@ -16,15 +16,17 @@ System.config({
     "github:*": "jspm_packages/github/*",
     "npm:*": "jspm_packages/npm/*"
   },
+
   meta: {
     "//cdn.jsdelivr.net/pouchdb/5.0.0/pouchdb.js": {
-      integrity: 'sha384-yZnRIuJqcu3aV491h6RhT0iv5l7q0Dt3L1M52s7/plUzD7bD788RPTmnZSXCdBJ+'
+      "integrity": "sha384-yZnRIuJqcu3aV491h6RhT0iv5l7q0Dt3L1M52s7/plUzD7bD788RPTmnZSXCdBJ+"
     }
   },
 
   map: {
     "babel": "npm:babel-core@5.8.25",
     "babel-runtime": "npm:babel-runtime@5.8.25",
+    "co": "npm:co@4.6.0",
     "core-js": "npm:core-js@1.2.1",
     "mercury": "npm:mercury@14.0.0",
     "mercury-router": "npm:mercury-router@1.0.9",

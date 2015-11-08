@@ -37,7 +37,7 @@ export default class
     }
     
     let initQuery = Object.assign({ include_docs: true }, opts);
-    let ready = this.db
+    observ.ready = this.db
       .allDocs(initQuery)
       .catch(log)
       .then(res =>
@@ -74,7 +74,7 @@ export default class
         return observ;
       });
     
-    return opts.async ? ready : observ;
+    return opts.async ? observ.ready : observ;
   }
 
   keyObject(opts, valueConstructor)

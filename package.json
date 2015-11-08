@@ -13,6 +13,7 @@
   "dependencies": {},
   "jspm": {
     "dependencies": {
+      "co": "npm:co@^4.6.0",
       "mercury": "npm:mercury@^14.0.0",
       "mercury-router": "npm:mercury-router@^1.0.9",
       "underscore": "npm:underscore@^1.8.3"

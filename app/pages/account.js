@@ -7,24 +7,26 @@ import dbq from '../querydb';
 let genId = () => Math.floor((Date.now() - epoch) / 1000);
 
 export default {
-  router(base, url, state)
+  init(params)
   {
+    return params.id
+      ? dbq.keyValue(params.id).then(AccountForm)
+      : Promise.resolve(AccountForm());
   },
-  
-  load(id)
+  restore(params, state)
   {
-    return id
-      ? kdbq.keyObject(id).then(r => AccountForm(r.doc))
-      : AccountForm();
+    return this.init(state.doc._id).then(s => s.set(state));
   },
-  restore(state) {
-    return this.load(state.doc._id).then(s => s.set(state));
+  render: render,
+  dispose(state)
+  {
+    if (state.doc.dispose) state.doc.dispose();
   },
   AccountForm(doc)
   {
-    doc = doc || {name: ''};
-    // TODO: extract a local copy?
-    return hg.state({
+    doc = doc || hg.value({name: ''});
+    // TODO: extract a local copy to be bound to form?
+    let state = hg.state({
       doc, // dereferencing doc is going to get old... observ interesting subkeys?
            // grr... but the blacklisted "name" key
       channels: {
@@ -42,6 +44,7 @@ export default {
         }
       }
     });
-  },
-  render
+    
+    return state;
+  }
 };

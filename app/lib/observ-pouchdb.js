@@ -201,6 +201,36 @@ export default class
     return hash;
   }
 
+  keyValue(id, opts)
+  {
+    opts = opts || {};
+    
+    let val = ObservValue(null);
+    
+    val.ready = this.db
+      .get(id, opts)
+      .catch(log)
+      .then(doc =>
+      {
+        val.set(doc);
+        
+        let processChange = c =>
+        {
+          if (c.id !== id) return;
+          
+          // hmm... dispose ourselves in case of delete?
+          val.set(c.deleted ? null : c.doc);
+        };
+        
+        this._changes.on('change', processChange);
+        val.dispose = () => this._changes.removeListener('change', processChange);
+        
+        return val;
+      });
+    
+    return opts.async ? val.ready : ready;
+  }
+  
   queryValue(view, opts)
   {
     opts = opts || {};

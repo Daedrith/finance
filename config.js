@@ -31,6 +31,7 @@ System.config({
     "mercury": "npm:mercury@14.0.0",
     "mercury-router": "npm:mercury-router@1.0.9",
     "pouchdb": "//cdn.jsdelivr.net/pouchdb/5.0.0/pouchdb.js",
+    "route-map": "npm:route-map@0.1.0",
     "underscore": "npm:underscore@1.8.3",
     "github:jspm/nodelibs-assert@0.1.0": {
       "assert": "npm:assert@1.3.0"

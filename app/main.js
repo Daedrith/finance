@@ -2,11 +2,14 @@ import hg from 'mercury';
 import Router from 'mercury-router';
 import _ from 'underscore';
 import co from 'co';
+import routeMap from 'route-map';
 
 import {log} from './lib/utils';
 
 import appdb from './appdb';
 import dbq from './querydb';
+
+import index from './pages/index';
 
 let {h} = hg;
 let {anchor} = Router;
@@ -112,10 +115,10 @@ let currentUrl = hg.computed([Router()], href => new URL(href));
 // TODO: should these props be hg.value()s?
 let navState = hg.struct({
   // document.location
-  currentUrl,
+  currentUrl, // TODO: no enumerable properties? might be better to just have the href...
   // observable returned by page component
   // there's an observer that listens and passes the value to replaceState
-  currentState: null,
+  currentPage: null,
   activeRequest: null
 });
 
@@ -134,32 +137,109 @@ let appState = hg.state({
   channels
 });
 
-let pageModules = new Map();
-resolvePage = co.wrap(function* (url0, pageState)
+let moduleCache = new Map();
+let loadModule = (...path) =>
 {
-  let url = url0.hash[0] === '/'
-    // TODO: look for fragment in hash
-    ? new URL(url0.origin + url0.hash.slice(1))
-    : url0;
-  
-  let segments = url.pathname.split('/').slice(1);
-  
-  let seg = segments.shift();
-  let module = pageModules.get(seg);
-  if (!module)
+  let id = path.map(s => s.replace(/^\/|\/$/g, '')).join('/');
+  let ret = moduleCache.get(id);
+  if (!ret)
   {
-    // TOOD: catch for module not found?
-    module = yield System.import(seg);
-    pageModules.put(seg, module);
+    ret = System.import(id).catch(e => Promise.reolve(null));
+    moduleCache.put(id, ret);
   }
   
-  // TODO: cancellation
+  return ret;
+};
 
-  // TODO: figure out routing protocol, etc.
-});
+let router = routeMap(index);
 
+let pageModuleBase = 'pages';
+let resolvePage = (fun, url, ...args) =>
+{
+  if (!url instanceof URL) url = new URL(url);
+  
+  args.unshift(
+    url.hash[0] === '/'
+      // TODO: look for fragment in hash
+      ? new URL(url.origin + url.hash.slice(1))
+      : url);
+  return fun.apply(null, args);
+}.bind(null, co.wrap(function* (url, pageState, throwIfCancelled)
+{
+  throwIfCancelled = throwIfCancelled || () => {};
+  let segments = url.pathname.split('/');
+  
+  while (segments.length > 0)
+  {
+    let seg = segments.shift();
+    let module = yield loadModule(pageModuleBase, seg, 'index');
+    throwIfCancelled();
+    module = module || yield loadModule(pageModuleBase, seg);
+    throwIfCancelled();
+    if (module && module.router)
+    {
+      let ret = module.router(url, pageState);
+      if (ret.then) ret = yield ret;
+      if (ret) return ret;
+    }
+  }
+  
+  throw new Error('Could not resolve  ' + url.href);
+}));
+
+// would be better if a url can always resolve to a renderer, rather than rely on the state of this map
+let rendererMap = new Map();
+  
+let navigate = (url, pageState) =>
+{
+  let pagePromise;
+  let throwIfCancelled = () =>
+  {
+    if (navState.activeRequest !== pagePromise)
+    {
+      throw new Error("Navigation cancelled");
+    }
+  };
+  
+  pagePromise = resolvePage(url, pageState, throwIfCancelled);
+  navState.activeRequest = pagePromise;
+  
+  return pagePromise.then(page =>
+  {
+    if (navState.activeRequest !== pagePromise)
+    {
+      if (page.dispose) page.dispose();
+      
+      return;
+    }
+    
+    let currentPage = navState.currentPage;
+    
+    // save this page's state, in case user closes and reopens tab
+    // TODO: this should be a listener to the page state (debounced?) then I leave this in; handle disposal separately?
+    window.history.replaceState(
+      currentPage(),
+      currentPage.title || '', // observable?
+      navState.currentUrl.href);
+    
+    if (currentPage.dispose) currentPage.dispose();
+    
+    window.history.pushState(
+      page(),
+      page.title || '', // observable?
+      url.href);
+    
+    rendererMap.set(url.href, page.render);
+    
+    navState.currentPage.set(page);
+    
+    return page;
+  });
+};
+  
 // rendering
 
+// TODO: make this a global handler
 function handleClick(e)
 {
   if (e.ctrlKey || e.shiftKey) return;
@@ -206,8 +286,9 @@ function renderNav()
   );
 }
 
-function renderRoute(route, pageState)
+function renderRoute(route, navState)
 {
+  rendererMap
 }
 
 let lbl = (n, c, a) => h('label', [n, h(c, a)]);
@@ -243,8 +324,9 @@ let stop = hg.app(
     let chs = s.channels;
     
     return h('div', [
+      hg.partial(renderNav),
       h('.flex-container', [
-        hg.partial(renderNav),
+        hg.partial(renderPage, s.navState),
         hg.partial(renderForm1, chs),
         hg.partial(renderForm2, chs),
         h('form', [

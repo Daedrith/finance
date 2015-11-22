@@ -109,20 +109,49 @@ let ledger = dbq.queryObject('ledger', {
 //});
 let bal = hg.value(42);
 
-let currentUrl = hg.computed([Router()], href => new URL(href));
-
-// TODO: on cold load, currentUrl will be out of sync with actual location, because we need to display a loading page; maybe a special flag?
-// TODO: should these props be hg.value()s?
 let navState = hg.struct({
-  // document.location
-  currentUrl, // TODO: no enumerable properties? might be better to just have the href...
-  // observable returned by page component
-  // there's an observer that listens and passes the value to replaceState
-  currentPage: null,
-  activeRequest: null
+  // TODO: is a change in URL enough to assume page changes, or should I use an immutable surrogate?
+  url: Router(),
+  state: hg.array([null]), // TODO: custom observ to listen to inner observ but let us retrieve the observ itself
+  activeRequest: hg.value(null)
 });
 
+let isNavigating = false;
 
+{
+  let oldUrl = null
+  let oldState = null;
+  let oldStateVal = null;
+  navState(s =>
+  {
+    if (oldState && oldUrl !== s.url)
+    {
+      getPage(oldUrl).dispose(oldState);
+      
+      if (!isNavigating)
+      {
+        // user clicked back or entered a URL or something;
+        // navigate didn't change URL
+        setTimeout(
+          () => navigate(s.url, { async: false }),
+          0);
+      }
+    }
+    
+    let newState = navState.state.get(0);
+    let newStateVal = newState();
+    
+    if (newStateVal !== oldStateVal)
+    {
+      // relies on Router executing pushState first
+      window.history.replaceState(newStateVal, document.title);
+    }
+    
+    oldUrl = s.url;
+    oldState = newState;
+    oldStateVal = newStateVal;
+  });
+}
 
 let appState = hg.state({
   dumpState: dbq.keyArray(),
@@ -137,158 +166,106 @@ let appState = hg.state({
   channels
 });
 
-let moduleCache = new Map();
-let loadModule = (...path) =>
-{
-  let id = path.map(s => s.replace(/^\/|\/$/g, '')).join('/');
-  let ret = moduleCache.get(id);
-  if (!ret)
-  {
-    ret = System.import(id).catch(e => Promise.reolve(null));
-    moduleCache.put(id, ret);
-  }
-  
-  return ret;
-};
-
 let router = routeMap(index);
 
-let pageModuleBase = 'pages';
-let resolvePage = (fun, url, ...args) =>
+let getPage = url =>
 {
+  url = url || navState.url();
   if (!url instanceof URL) url = new URL(url);
   
-  args.unshift(
-    url.hash[0] === '/'
-      // TODO: look for fragment in hash
-      ? new URL(url.origin + url.hash.slice(1))
-      : url);
-  return fun.apply(null, args);
-}.bind(null, co.wrap(function* (url, pageState, throwIfCancelled)
+  url = url.hash[0] === '/'
+    // TODO: look for fragment in hash
+    ? new URL(url.origin + url.hash.slice(1))
+    : url;
+      
+  return router(url.href).fn;
+};
+
+let navigate = co.wrap((url, opts) =>
 {
-  throwIfCancelled = throwIfCancelled || () => {};
-  let segments = url.pathname.split('/');
+  let route = router(url);
+  // TODO: avoid throwing an error?
+  if (!route) throw new Error('Could not resolve ' + url.href);
   
-  while (segments.length > 0)
+  let ct = new Promise((resolve, reject) =>
   {
-    let seg = segments.shift();
-    let module = yield loadModule(pageModuleBase, seg, 'index');
-    throwIfCancelled();
-    module = module || yield loadModule(pageModuleBase, seg);
-    throwIfCancelled();
-    if (module && module.router)
-    {
-      let ret = module.router(url, pageState);
-      if (ret.then) ret = yield ret;
-      if (ret) return ret;
-    }
+    ct.cancelled = null;
+    ct.cancel = () => resolve(ct.cancelled = true);
+    ct.dispose = () => resolve(ct.cancelled = false);
+  });
+  
+  opts = Object.assign({ async: true, ct }, opts);
+  let { async } = opts;
+  
+  let prevRequest = navState.activeRequest();
+  if (prevRequest) prevRequest.cancel();
+  
+  navState.activeRequest.set(ct);
+  
+  let page = route.fn;
+  let state = page.init(route.params, opts)
+  if (async) state = yield state;
+
+  if (ct.cancelled)
+  {
+    page.dispose(state);
+    // TODO: avoid throwing an error?
+    throw new Error('Navigation cancelled');
   }
   
-  throw new Error('Could not resolve  ' + url.href);
-}));
-
-// would be better if a url can always resolve to a renderer, rather than rely on the state of this map
-let rendererMap = new Map();
-  
-let navigate = (url, pageState) =>
-{
-  let pagePromise;
-  let throwIfCancelled = () =>
-  {
-    if (navState.activeRequest !== pagePromise)
-    {
-      throw new Error("Navigation cancelled");
-    }
-  };
-  
-  pagePromise = resolvePage(url, pageState, throwIfCancelled);
-  navState.activeRequest = pagePromise;
-  
-  return pagePromise.then(page =>
-  {
-    if (navState.activeRequest !== pagePromise)
-    {
-      if (page.dispose) page.dispose();
-      
-      return;
-    }
-    
-    let currentPage = navState.currentPage;
-    
-    // save this page's state, in case user closes and reopens tab
-    // TODO: this should be a listener to the page state (debounced?) then I leave this in; handle disposal separately?
-    window.history.replaceState(
-      currentPage(),
-      currentPage.title || '', // observable?
-      navState.currentUrl.href);
-    
-    if (currentPage.dispose) currentPage.dispose();
-    
-    window.history.pushState(
-      page(),
-      page.title || '', // observable?
-      url.href);
-    
-    rendererMap.set(url.href, page.render);
-    
-    navState.currentPage.set(page);
-    
-    return page;
+  isNavigating = true;
+  navState.set({
+    url,
+    [state], // FIXME: we need that custom observable after all
+    activeRequest: null
   });
-};
+  isNavigating = false;
   
+  ct.dispose();
+});
+
 // rendering
 
-// TODO: make this a global handler
+hg.Delegator().addGlobalEventListener('click', handleClick);
 function handleClick(e)
 {
-  if (e.ctrlKey || e.shiftKey) return;
+  if (e.ctrlKey || e.shiftKey || e.button !== 0) return;
+  
+  let a = e.target;
+  if (a.tagName.toLowerCase() !== 'a') return; // TODO: other exceptions?
   
   e.preventDefault();
   
   // TODO: use URL constructor to clone?
-  let url = e.target;
+  let url = a;
   
   let segments = url.pathname.split('/');
   segments.shift(); // path always starts with /
   // compatibility: use hash (refreshing becomes a pain otherwise, until we have server rendering)
   [].push.apply(segments, url.hash.split('/'));
   
-  // TODO: load module to handle routing
-  // make this function async?
-  //let resource = segments[0];
-  //let pm = appState.pageModules.get(resource)
-  //if (!pm)
-  //{
-  //  resource = await System.import('pages/' + resource);
-  //}
-  
-  
-  appState.route.set(url.href);
+  navigate(url.href);
 }
 
 let a = (text, href, opts) =>
 {
-  opts = opts || {};
-  return h('a', Object.assign(opts, {
-    href,
-    'ev-click': handleClick
-  }), text);
+  opts = opts ? Object.assign(opts, { href }) : { href };
+  return h('a', opts, text);
 };
 
 function renderNav()
 {
   return h('nav',
     h('ul', [
-      h('li', a('form1', '#acct')),
-      h('li', a('form1', '#xact'))
+      h('li', a('form1', '#/acct')),
+      h('li', a('form1', '#/xact'))
     ])
   );
 }
 
-function renderRoute(route, navState)
+function renderPage(navState)
 {
-  rendererMap
+  return getPage(navState.url).render(navState.pageState);
 }
 
 let lbl = (n, c, a) => h('label', [n, h(c, a)]);

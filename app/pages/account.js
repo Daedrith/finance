@@ -7,15 +7,33 @@ import dbq from '../querydb';
 let genId = () => Math.floor((Date.now() - epoch) / 1000);
 
 export default {
-  init(params)
+  init(params, opts)
   {
-    return params.id
-      ? dbq.keyValue(params.id).then(AccountForm)
-      : Promise.resolve(AccountForm());
-  },
-  restore(params, state)
-  {
-    return this.init(state.doc._id).then(s => s.set(state));
+    let { async, oldState: state } = opts;
+    
+    let doc = params.id != null ? dbq.keyValue(params.id, opts) : null;
+    
+    let state = asnyc
+      ? (doc ? doc.then(AccountForm) : Promise.resolve(AccountForm()))
+      : AccountForm(doc);
+    
+    if (oldState)
+    {
+      if (async)
+      {
+        state = state.then(s =>
+        {
+          s.set(oldState);
+          return s;
+        });
+      }
+      else
+      {
+        state.set(oldState);
+      }
+    }
+    
+    return state;
   },
   render: render,
   dispose(state)
@@ -26,7 +44,7 @@ export default {
   {
     doc = doc || hg.value({name: ''});
     // TODO: extract a local copy to be bound to form?
-    let state = hg.state({
+    return hg.state({
       doc, // dereferencing doc is going to get old... observ interesting subkeys?
            // grr... but the blacklisted "name" key
       channels: {
@@ -44,7 +62,5 @@ export default {
         }
       }
     });
-    
-    return state;
   }
 };

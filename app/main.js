@@ -118,6 +118,7 @@ let navState = hg.struct({
 
 let isNavigating = false;
 
+// handle navState changes
 {
   let oldUrl = null
   let oldState = null;
@@ -138,13 +139,18 @@ let isNavigating = false;
       }
     }
     
+    // TODO: get rid of these ugly null checks
     let newState = navState.state.get(0);
-    let newStateVal = newState();
-    
-    if (newStateVal !== oldStateVal)
+    let newStateVal;
+    if (newState)
     {
-      // relies on Router executing pushState first
-      window.history.replaceState(newStateVal, document.title);
+      newStateVal = newState();
+      
+      if (newStateVal !== oldStateVal)
+      {
+        // relies on Router executing pushState first
+        window.history.replaceState(newStateVal, document.title);
+      }
     }
     
     oldUrl = s.url;
@@ -171,28 +177,54 @@ let router = routeMap(index);
 let getPage = url =>
 {
   url = url || navState.url();
-  if (!url instanceof URL) url = new URL(url);
+  if (!(url instanceof URL)) url = new URL(url);
   
-  url = url.hash[0] === '/'
-    // TODO: look for fragment in hash
+  url = url.hash[1] === '/'
     ? new URL(url.origin + url.hash.slice(1))
     : url;
       
   return router(url.href).fn;
 };
 
-let navigate = co.wrap((url, opts) =>
+let createCancellationToken = () =>
+{
+  let resolve, reject;
+  let ct = new Promise((res, rej) =>
+  {
+    resolve = res;
+    reject = rej;
+  });
+  
+  // HACK: es6.promise is polyfilling the native Promise for some reason;
+  // we need to make the symbol prop it uses non-enumerable for serialization
+  for (let key of Object.keys(ct))
+  {
+    if (key.startsWith('Symbol('))
+    {
+      Object.defineProperty(ct, key, {
+        value: ct[key],
+        enumerable: false
+      });
+    }
+  }
+  
+  let cancelled = null;
+  Object.defineProperties(ct, {
+    cancelled: { get: () => cancelled, enumerable: true },
+    cancel: { value: () => resolve(cancelled = true) },
+    dispose: { value: () => resolve(cancelled = false) }
+  });
+  
+  return ct;
+};
+
+let navigate = co.wrap(function*(url, opts)
 {
   let route = router(url);
   // TODO: avoid throwing an error?
   if (!route) throw new Error('Could not resolve ' + url.href);
   
-  let ct = new Promise((resolve, reject) =>
-  {
-    ct.cancelled = null;
-    ct.cancel = () => resolve(ct.cancelled = true);
-    ct.dispose = () => resolve(ct.cancelled = false);
-  });
+  let ct = createCancellationToken();
   
   opts = Object.assign({ async: true, ct }, opts);
   let { async } = opts;
@@ -216,13 +248,16 @@ let navigate = co.wrap((url, opts) =>
   isNavigating = true;
   navState.set({
     url,
-    [state], // FIXME: we need that custom observable after all
+    state: [state], // FIXME: we need that custom observable after all
     activeRequest: null
   });
   isNavigating = false;
   
   ct.dispose();
 });
+
+// TODO: loading screen?
+navigate(document.location.href, { async: false });
 
 // rendering
 
@@ -257,8 +292,8 @@ function renderNav()
 {
   return h('nav',
     h('ul', [
-      h('li', a('form1', '#/acct')),
-      h('li', a('form1', '#/xact'))
+      h('li', a('edit', '#/accounts/6192115')),
+      h('li', a('new', '#/accounts'))
     ])
   );
 }

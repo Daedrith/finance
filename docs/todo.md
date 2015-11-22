@@ -4,7 +4,6 @@ Version 1
 Short/medium-term plans
 -----------------------
 
-- add README and build instructions
 - modularize CSS, get rid of rest of compiled code
 - doc edit mode (hidden _id, _rev fields?)
   - kinda need to do routing

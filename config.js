@@ -9,7 +9,8 @@ System.config({
     ],
     "blacklist": [
       "es6.forOf",
-      "es6.spread"
+      "es6.spread",
+      "regenerator"
     ]
   },
   paths: {

@@ -9,13 +9,15 @@ let genId = () => Math.floor((Date.now() - epoch) / 1000);
 export default {
   init(params, opts)
   {
-    let { async, oldState: state } = opts;
+    let { async, state: oldState } = opts;
     
-    let doc = params.id != null ? dbq.keyValue(params.id, opts) : null;
+    let doc = params.id != null
+      ? dbq.keyValue('acct-' + params.id, opts)
+      : null;
     
     let state = asnyc
-      ? (doc ? doc.then(AccountForm) : Promise.resolve(AccountForm()))
-      : AccountForm(doc);
+      ? (doc ? doc.then(this.AccountForm) : Promise.resolve(this.AccountForm()))
+      : this.AccountForm(doc);
     
     if (oldState)
     {
@@ -38,7 +40,7 @@ export default {
   render: render,
   dispose(state)
   {
-    if (state.doc.dispose) state.doc.dispose();
+    if (state.doc && state.doc.dispose) state.doc.dispose();
   },
   AccountForm(doc)
   {

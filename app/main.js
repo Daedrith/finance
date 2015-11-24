@@ -172,9 +172,7 @@ let appState = hg.state({
   channels
 });
 
-let router = routeMap(index);
-
-let getPage = url =>
+let router = (fun, url) =>
 {
   url = url || navState.url();
   if (!(url instanceof URL)) url = new URL(url);
@@ -182,9 +180,11 @@ let getPage = url =>
   url = url.hash[1] === '/'
     ? new URL(url.origin + url.hash.slice(1))
     : url;
-      
-  return router(url.href).fn;
-};
+  
+  return fun(url.href);
+}.bind(null, routeMap(index));
+
+let getPage = url => router(url.href).fn;
 
 let createCancellationToken = () =>
 {
@@ -195,17 +195,12 @@ let createCancellationToken = () =>
     reject = rej;
   });
   
-  // HACK: es6.promise is polyfilling the native Promise for some reason;
-  // we need to make the symbol prop it uses non-enumerable for serialization
-  for (let key of Object.keys(ct))
-  {
-    if (key.startsWith('Symbol('))
-    {
-      Object.defineProperty(ct, key, {
-        value: ct[key],
-        enumerable: false
-      });
-    }
+  // HACK: es6.promise is polyfilling the native Promise;
+  // we need to make the internal prop it uses non-enumerable for serialization
+  if ('_d' in ct) {
+    Object.defineProperty(ct, "_d", {
+      enumerable: false
+    });
   }
   
   let cancelled = null;
@@ -300,7 +295,7 @@ function renderNav()
 
 function renderPage(navState)
 {
-  return getPage(navState.url).render(navState.pageState);
+  return getPage(navState.url).render(navState.state[0]);
 }
 
 let lbl = (n, c, a) => h('label', [n, h(c, a)]);

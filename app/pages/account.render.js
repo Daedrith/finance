@@ -8,8 +8,8 @@ const required = true;
 
 export default function(s)
 {
-  d = s.doc;
-  return h('form', { 'ev-submit': hg.sendSubmit(chs.acctAdd) },
+  let d = s.doc;
+  return h('form', { 'ev-submit': hg.sendSubmit(s.channels.save) },
     h('fieldset', [
       h('legend', 'Create Account'),
       lbl('Name', 'input', { name: 'name', required, value: d.name }),

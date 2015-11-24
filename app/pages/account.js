@@ -12,11 +12,11 @@ export default {
     let { async, state: oldState } = opts;
     
     let doc = params.id != null
-      ? dbq.keyValue('acct-' + params.id, opts)
+      ? dbq.keyValue('acct-' + params.id, Object.assign({ defaultValue: this._defaultDoc }, opts))
       : null;
     
-    let state = asnyc
-      ? (doc ? doc.then(this.AccountForm) : Promise.resolve(this.AccountForm()))
+    let state = async
+      ? (doc ? doc.then(this.AccountForm) : Promise.resolve(this.AccountForm(doc)))
       : this.AccountForm(doc);
     
     if (oldState)
@@ -42,9 +42,10 @@ export default {
   {
     if (state.doc && state.doc.dispose) state.doc.dispose();
   },
+  _defaultDoc: {name: ''},
   AccountForm(doc)
   {
-    doc = doc || hg.value({name: ''});
+    doc = doc || hg.value(this._defaultDoc);
     // TODO: extract a local copy to be bound to form?
     return hg.state({
       doc, // dereferencing doc is going to get old... observ interesting subkeys?

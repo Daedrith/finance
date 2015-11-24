@@ -25,10 +25,10 @@ System.config({
   },
 
   map: {
-    "babel": "npm:babel-core@5.8.25",
-    "babel-runtime": "npm:babel-runtime@5.8.25",
+    "babel": "npm:babel-core@5.8.34",
+    "babel-runtime": "npm:babel-runtime@5.8.34",
     "co": "npm:co@4.6.0",
-    "core-js": "npm:core-js@1.2.1",
+    "core-js": "npm:core-js@1.2.6",
     "mercury": "npm:mercury@14.0.0",
     "mercury-router": "npm:mercury-router@1.0.9",
     "pouchdb": "//cdn.jsdelivr.net/pouchdb/5.0.0/pouchdb.js",
@@ -38,7 +38,7 @@ System.config({
       "assert": "npm:assert@1.3.0"
     },
     "github:jspm/nodelibs-buffer@0.1.0": {
-      "buffer": "npm:buffer@3.5.1"
+      "buffer": "npm:buffer@3.5.2"
     },
     "github:jspm/nodelibs-console@0.1.0": {
       "console-browserify": "npm:console-browserify@1.1.0"
@@ -81,10 +81,10 @@ System.config({
     "npm:assert@1.3.0": {
       "util": "npm:util@0.10.3"
     },
-    "npm:babel-runtime@5.8.25": {
+    "npm:babel-runtime@5.8.34": {
       "process": "github:jspm/nodelibs-process@0.1.2"
     },
-    "npm:buffer@3.5.1": {
+    "npm:buffer@3.5.2": {
       "base64-js": "npm:base64-js@0.0.8",
       "ieee754": "npm:ieee754@1.1.6",
       "is-array": "npm:is-array@1.0.1"
@@ -94,17 +94,18 @@ System.config({
       "date-now": "npm:date-now@0.1.4",
       "util": "github:jspm/nodelibs-util@0.1.0"
     },
-    "npm:core-js@1.2.1": {
+    "npm:core-js@1.2.6": {
       "fs": "github:jspm/nodelibs-fs@0.1.2",
+      "path": "github:jspm/nodelibs-path@0.1.0",
       "process": "github:jspm/nodelibs-process@0.1.2",
       "systemjs-json": "github:systemjs/plugin-json@0.1.0"
     },
-    "npm:core-util-is@1.0.1": {
+    "npm:core-util-is@1.0.2": {
       "buffer": "github:jspm/nodelibs-buffer@0.1.0"
     },
     "npm:cuid@1.3.8": {
       "browser-fingerprint": "npm:browser-fingerprint@0.0.1",
-      "core-js": "npm:core-js@1.2.1",
+      "core-js": "npm:core-js@1.2.6",
       "node-fingerprint": "npm:node-fingerprint@0.0.2",
       "os": "github:jspm/nodelibs-os@0.1.0",
       "process": "github:jspm/nodelibs-process@0.1.2"
@@ -122,7 +123,7 @@ System.config({
       "assert": "github:jspm/nodelibs-assert@0.1.0",
       "camelize": "npm:camelize@1.0.0",
       "string-template": "npm:string-template@0.2.1",
-      "xtend": "npm:xtend@4.0.0"
+      "xtend": "npm:xtend@4.0.1"
     },
     "npm:ev-store@7.0.0": {
       "individual": "npm:individual@3.0.0"
@@ -168,7 +169,7 @@ System.config({
       "value-event": "npm:value-event@5.1.0",
       "vdom-thunk": "npm:vdom-thunk@3.0.0",
       "virtual-dom": "npm:virtual-dom@1.3.0",
-      "xtend": "npm:xtend@4.0.0"
+      "xtend": "npm:xtend@4.0.1"
     },
     "npm:next-tick@0.2.2": {
       "process": "github:jspm/nodelibs-process@0.1.2"
@@ -211,7 +212,7 @@ System.config({
     },
     "npm:readable-stream@1.1.13": {
       "buffer": "github:jspm/nodelibs-buffer@0.1.0",
-      "core-util-is": "npm:core-util-is@1.0.1",
+      "core-util-is": "npm:core-util-is@1.0.2",
       "events": "github:jspm/nodelibs-events@0.1.1",
       "inherits": "npm:inherits@2.0.1",
       "isarray": "npm:isarray@0.0.1",

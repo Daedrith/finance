@@ -205,7 +205,7 @@ export default class
   {
     opts = opts || {};
     
-    let val = ObservValue(null);
+    let val = ObservValue(opts.defaultValue);
     
     val.ready = this.db
       .get(id, opts)
@@ -228,7 +228,7 @@ export default class
         return val;
       });
     
-    return opts.async ? val.ready : ready;
+    return opts.async ? val.ready : val;
   }
   
   queryValue(view, opts)

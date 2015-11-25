@@ -74,7 +74,7 @@ export default class
         return observ;
       });
     
-    return opts.async ? observ.ready : observ;
+    return observ;
   }
 
   keyObject(opts, valueConstructor)
@@ -203,9 +203,9 @@ export default class
 
   keyValue(id, opts)
   {
-    opts = opts || {};
+    let { defaultValue } = opts;
     
-    let val = ObservValue(opts.defaultValue);
+    let val = ObservValue(defaultValue);
     
     val.ready = this.db
       .get(id, opts)
@@ -225,10 +225,14 @@ export default class
         this._changes.on('change', processChange);
         val.dispose = () => this._changes.removeListener('change', processChange);
         
+        val.ready.yet = true;
+        
         return val;
       });
+      
+    if (!val.ready.yet) val.ready.yet = false;
     
-    return opts.async ? val.ready : val;
+    return val;
   }
   
   queryValue(view, opts)

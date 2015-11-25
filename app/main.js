@@ -4,6 +4,7 @@ import _ from 'underscore';
 import co from 'co';
 import routeMap from 'route-map';
 
+import obsobs from './lib/observ-observ';
 import {log} from './lib/utils';
 
 import appdb from './appdb';
@@ -62,17 +63,7 @@ Promise.all(indexPromises).then(() =>
 {
 // channels
 
-let epoch = +new Date(2015, 8, 12, 0, 0, 0);
-let genId = () => Math.floor((Date.now() - epoch) / 1000);
-
 let channels = {
-  acctAdd(s, d) {
-    appdb.put({
-      _id: d._id || `acct-${genId()}`,
-      _rev: d._rev,
-      name: d.name
-    });
-  },
   xactAdd(s, d) {
     let postDate = createDate = Date.now();
     let createDate = postDate;
@@ -112,7 +103,7 @@ let bal = hg.value(42);
 let navState = hg.struct({
   // TODO: is a change in URL enough to assume page changes, or should I use an immutable surrogate?
   url: Router(),
-  state: hg.array([null]), // TODO: custom observ to listen to inner observ but let us retrieve the observ itself
+  state: obsobs(),
   activeRequest: hg.value(null)
 });
 
@@ -140,7 +131,7 @@ let isNavigating = false;
     }
     
     // TODO: get rid of these ugly null checks
-    let newState = navState.state.get(0);
+    let newState = navState.state.observ;
     let newStateVal;
     if (newState)
     {
@@ -172,6 +163,8 @@ let appState = hg.state({
   channels
 });
 
+window.appState = appState;
+
 let router = (fun, url) =>
 {
   url = url || navState.url();
@@ -184,7 +177,7 @@ let router = (fun, url) =>
   return fun(url.href);
 }.bind(null, routeMap(index));
 
-let getPage = url => router(url.href).fn;
+let getPage = url => router(url).fn;
 
 let createCancellationToken = () =>
 {
@@ -213,37 +206,49 @@ let createCancellationToken = () =>
   return ct;
 };
 
+// TODO: maybe use the async transform instead?
 let navigate = co.wrap(function*(url, opts)
 {
   let route = router(url);
   // TODO: avoid throwing an error?
   if (!route) throw new Error('Could not resolve ' + url.href);
   
+  let prevRequest = navState.activeRequest();
+  if (prevRequest) prevRequest.cancel();
+  
   let ct = createCancellationToken();
+  
+  navState.activeRequest.set(ct);
   
   opts = Object.assign({ async: true, ct }, opts);
   let { async } = opts;
   
-  let prevRequest = navState.activeRequest();
-  if (prevRequest) prevRequest.cancel();
-  
-  navState.activeRequest.set(ct);
-  
   let page = route.fn;
-  let state = page.init(route.params, opts)
-  if (async) state = yield state;
-
-  if (ct.cancelled)
+  let state = page.init(route.params, opts);
+  
+  if (async && state.ready && !state.ready.yet)
   {
-    page.dispose(state);
-    // TODO: avoid throwing an error?
-    throw new Error('Navigation cancelled');
+    yield state.ready;
+
+    if (ct.cancelled)
+    {
+      page.dispose(state);
+      // TODO: avoid throwing an error?
+      throw new Error('Navigation cancelled');
+    }
   }
   
+  // TODO: how do we support a replaceState option?
+  // - perhaps we need to model the History API more accurately:
+  //   a stack of {url, title, state} entries, so that we can
+  //   push/replace/popstate with normal state manipulation,
+  //   as well as capture that happening externally (e.g. we can
+  //   choose to dispose a state only once it is popped off)
   isNavigating = true;
+  navState.state.observ = state;
   navState.set({
     url,
-    state: [state], // FIXME: we need that custom observable after all
+    state: state(),
     activeRequest: null
   });
   isNavigating = false;
@@ -252,7 +257,9 @@ let navigate = co.wrap(function*(url, opts)
 });
 
 // TODO: loading screen?
-navigate(document.location.href, { async: false });
+//setTimeout(() => 
+  navigate(document.location.href, { async: false })
+//  , 0);
 
 // rendering
 
@@ -266,15 +273,7 @@ function handleClick(e)
   
   e.preventDefault();
   
-  // TODO: use URL constructor to clone?
-  let url = a;
-  
-  let segments = url.pathname.split('/');
-  segments.shift(); // path always starts with /
-  // compatibility: use hash (refreshing becomes a pain otherwise, until we have server rendering)
-  [].push.apply(segments, url.hash.split('/'));
-  
-  navigate(url.href);
+  navigate(a.href);
 }
 
 let a = (text, href, opts) =>
@@ -287,6 +286,7 @@ function renderNav()
 {
   return h('nav',
     h('ul', [
+      h('li', a('home', '/')),
       h('li', a('edit', '#/accounts/6192115')),
       h('li', a('new', '#/accounts'))
     ])
@@ -295,22 +295,20 @@ function renderNav()
 
 function renderPage(navState)
 {
-  return getPage(navState.url).render(navState.state[0]);
+  try
+  {
+    return getPage(navState.url).render(navState.state);
+  }
+  catch(e)
+  {
+    return h('pre', e.stack);
+  }
 }
 
 let lbl = (n, c, a) => h('label', [n, h(c, a)]);
 
 const required = true;
 
-function renderForm1(chs)
-{
-  return h('form', { 'ev-submit': hg.sendSubmit(chs.acctAdd) },
-    h('fieldset', [
-      h('legend', 'Create Account'),
-      lbl('Name', 'input', { name: 'name', required }),
-      h('button', 'Create')
-    ]));
-}
 function renderForm2(chs)
 {
   return h('form', { 'ev-submit': hg.sendSubmit(chs.xactAdd) },
@@ -330,11 +328,32 @@ let stop = hg.app(
   {
     let chs = s.channels;
     
+    //j`
+    //div
+    //  ${[renderNav]}
+    //  .flex-container
+    //    ${hg.partial(renderPage, s.navState)}
+    //    ${hg.partial(renderForm2, chs)}
+    //    form
+    //      datalist#accts
+    //        ${s.accts.map(a => j`option(value=${a.name})`)}
+    //  .flex-container
+    //    pre#dbdump
+    //      lbl Show full dump
+    //        input(name=full-dump, type=checkbox, ev-change=#{hg.sendChange(chs.toggleFullDump)})
+    //      ${s.dumpState
+    //          .filter(d => s.showDesignDocs || d._id[0] !== '_')
+    //          .map(d => j`
+    //            div
+    //              ${JSON.stringify(d, null, 2).replace(/\\n/g, '\n')}
+    //              span.del(ev-click=${hg.send(chs.docDel, d)})
+    //            `)}
+    //`;
+    
     return h('div', [
       hg.partial(renderNav),
       h('.flex-container', [
         hg.partial(renderPage, s.navState),
-        hg.partial(renderForm1, chs),
         hg.partial(renderForm2, chs),
         h('form', [
           h('datalist#accts',

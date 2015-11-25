@@ -4,35 +4,45 @@ import render from './account.render';
 import dbq from '../querydb';
 
 // TODO: module?
+let epoch = +new Date(2015, 8, 12, 0, 0, 0);
+// TODO: hybrid serial + random?
 let genId = () => Math.floor((Date.now() - epoch) / 1000);
+
+// TODO: module
+let toReadyObserv = ready =>
+{
+  if (!ready)
+  {
+    ready = Promise.resolve(true);
+    ready.yet = true;
+  }
+  
+  let obs = hg.value(ready.yet);
+  obs.then = ready.then.bind(ready);
+  obs.yet = ready.yet;
+  if (!ready.yet) ready.then(() =>
+  {
+    obs.set(obs.yet = true);
+    return true;
+  });
+  
+  return obs;
+};
 
 export default {
   init(params, opts)
   {
-    let { async, state: oldState } = opts;
+    let { state: oldState } = opts;
     
     let doc = params.id != null
-      ? dbq.keyValue('acct-' + params.id, Object.assign({ defaultValue: this._defaultDoc }, opts))
+      ? dbq.keyValue('acct-' + params.id, opts)
       : null;
     
-    let state = async
-      ? (doc ? doc.then(this.AccountForm) : Promise.resolve(this.AccountForm(doc)))
-      : this.AccountForm(doc);
+    let state = this.AccountForm(doc);
     
     if (oldState)
     {
-      if (async)
-      {
-        state = state.then(s =>
-        {
-          s.set(oldState);
-          return s;
-        });
-      }
-      else
-      {
-        state.set(oldState);
-      }
+      state.set(oldState);
     }
     
     return state;
@@ -42,26 +52,30 @@ export default {
   {
     if (state.doc && state.doc.dispose) state.doc.dispose();
   },
-  _defaultDoc: {name: ''},
   AccountForm(doc)
   {
-    doc = doc || hg.value(this._defaultDoc);
+    doc = doc || hg.value({ name: '' });
     // TODO: extract a local copy to be bound to form?
     return hg.state({
       doc, // dereferencing doc is going to get old... observ interesting subkeys?
            // grr... but the blacklisted "name" key
+      ready: toReadyObserv(doc.ready),
       channels: {
-        save(s, d) {
+        save(s, form) {
           // TODO: form cycle events
           let doc = s.doc();
           appdb.put({
             _id: doc._id || `acct-${genId()}`,
             _rev: doc._rev,
-            name: d.name
-          });
-          // TODO: can we async mutate state
-          // - well, nvm; we should just mutate the route if we want to edit
-          // - (hmm.. but then the history stack would get messed up; unless there's a replace, or we kinda hack around)
+            name: form.name
+          }).then(res =>
+          {
+            if (!doc._id)
+            {
+              // TODO: send message to navigate to /accts/{res.id}
+              // replace option
+            }
+          }); // TODO: error handling
         }
       }
     });

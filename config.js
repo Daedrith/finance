@@ -31,6 +31,7 @@ System.config({
     "core-js": "npm:core-js@1.2.6",
     "mercury": "npm:mercury@14.0.0",
     "mercury-router": "npm:mercury-router@1.0.9",
+    "observ": "npm:observ@0.2.0",
     "pouchdb": "//cdn.jsdelivr.net/pouchdb/5.0.0/pouchdb.js",
     "route-map": "npm:route-map@0.1.0",
     "underscore": "npm:underscore@1.8.3",

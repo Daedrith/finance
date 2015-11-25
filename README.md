@@ -33,4 +33,4 @@ TODO
 ----
 
 - Name
-- Update babel version
+- Get from prototyping to working project

@@ -38,49 +38,11 @@ Framework
     - Only one change feed subscription to PouchDB, which is then filtered to the observables
       - Might be premature optimization; either test or look at source code
   - Future: rewind/fast-forward
-- Routing
-  - Component-based pages... page components... PCs
-    - they're not really "components" in the mercury sense anymore
-    - Since components have an init function, we can construct the state object with the proper observables
-    - Unfortunately, our signal that the (nested) pdb-observables are no longer needed is when the component itself is no longer being observed... perhaps have to explicitly dispose
-    - First of all, should decide whether PCs should manage their subscriptions directly, or they're just given the value they edit, and a higher level of abstraction manages query/persistence
-      - PCs end up being tightly coupled to the app/query manager singletons
-      - Probably do it the simpler/perhaps more unclean way for now, try to refactor later
-    - Interface:
-      - Should make PCs server-friendly
-      - static load instead?
-        - Does this solve parameterization?
-        - It seems like this would just go in a different module? the routing scheme?
-          - resource alloc and dispose in separate modules :| but maybe I can make disposal automatic enough?
-          - simplifying the number of modules is good, too, though
-      - (construction): seems mostly just internally useful
-      - state: the (observable) to put in the app state
-      - ready: optional promise for async initialization
-        - don't like this... no use for a partially initialized object, other than to call bugs; really want async factory...
-      - dispose: optional method
-        - tempting to make this dynamic, but can do so later
-      - focus/blur?
-  - For the typical "form" PC, is it wise to render directly from the db query?
-    - probably not in "edit" mode
-  - Figure out async navigation
-    - User clicks a link, we start loading the requested component
-      - Component might be created, but also need to know when all of its dependent data (or at least the data we want to have for the initial render) is ready
-      - Fade in overlay? Or a non-modal indicator
-    - Route changes
-      - Keep a (limited) stack of previous pages? Useful for non-persisted page state, e.g. state of filters
-    - If user presses escape, or navigates somewhere else, cancel first navigation
-    - Could be fancy with transitions, but entirely unnecessary
-  - Figure out parameterization
-    - e.g. /foo/:id/edit
-    - import foo/index first, discover routes
-    - put off to later; can just use querystring for now
-  - History stack
-- channel registration? Probably solved by component-based pages
 - CSS framework
-  - bootstrap cards?
+  - bootstrap cards? MUI?
   - think about overall UI (cards are attractive; perhaps even avoid modal UIs? interesting conflict resolution)
 - Turn label helper function into labelled control component?
-  - Might be a first easy step into 
+  - Might be a first easy step into components
 
 - tagged template function for creating vdom nodes... jade-like syntax?
 - form generation?
@@ -122,3 +84,9 @@ Version 2
 - Recurring
   - Interest rate calculation
 - Reconciliation
+
+Wishlist
+========
+
+- Signal graph visualizer for observables
+- Type annotations?

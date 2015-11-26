@@ -305,20 +305,19 @@ function renderPage(navState)
   }
 }
 
-let lbl = (n, c, a) => h('label', [n, h(c, a)]);
+let lbl = (n, c, a) => h('.mui-textfield', [h(c, a), h('label', n)]);
 
 const required = true;
 
 function renderForm2(chs)
 {
   return h('form', { 'ev-submit': hg.sendSubmit(chs.xactAdd) },
-    h('fieldset', [
-      h('legend', 'Create transaction'),
-      lbl('From', 'input', { name: 'from', required, attributes: { list: 'accts' } }),
-      lbl('To', 'input', { name: 'to', required, attributes: { list: 'accts' } }),
-      lbl('Amount', 'input', { name: 'amt', type: 'number', step: 0.01, required }),
-      h('button', 'Create')
-    ]));
+    h('legend', 'Create transaction'),
+    lbl('From', 'input', { name: 'from', required, attributes: { list: 'accts' } }),
+    lbl('To', 'input', { name: 'to', required, attributes: { list: 'accts' } }),
+    lbl('Amount', 'input', { name: 'amt', type: 'number', step: 0.01, required }),
+    h('button', 'Create')
+  );
 }
 
 let stop = hg.app(
@@ -350,18 +349,18 @@ let stop = hg.app(
     //            `)}
     //`;
     
-    return h('div', [
+    return h('.mui-container', [
       hg.partial(renderNav),
-      h('.flex-container', [
-        hg.partial(renderPage, s.navState),
-        hg.partial(renderForm2, chs),
+      h('.mui-panel', [
+        h('.mui-panel', hg.partial(renderPage, s.navState)),
+        h('.mui-panel', hg.partial(renderForm2, chs)),
         h('form', [
           h('datalist#accts',
             _.map(s.accts, a => h('option', { value: a.name }))
           )
         ])
       ]),
-      h('.flex-container', [
+      h('.mui-panel', [
         h('pre#dbdump', [
           lbl('Show full dump', 'input', { name: 'full-dump', type: 'checkbox', 'ev-change': hg.sendChange(chs.toggleFullDump) }),
           s.dumpState

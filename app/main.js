@@ -1,8 +1,7 @@
-import hg from 'mercury';
+﻿import hg from 'mercury';
 import Router from 'mercury-router';
 import _ from 'underscore';
 import co from 'co';
-import routeMap from 'route-map';
 
 import obsobs from './lib/observ-observ';
 import {log} from './lib/utils';
@@ -10,7 +9,9 @@ import {log} from './lib/utils';
 import appdb from './appdb';
 import dbq from './querydb';
 
-import index from './pages/index';
+import renderMain from './main.render';
+
+import { router, getPage } from './approuter';
 
 let {h} = hg;
 let {anchor} = Router;
@@ -85,6 +86,9 @@ let channels = {
   },
   toggleFullDump(s, d) {
     s.showDesignDocs.set(d['full-dump']);
+  },
+  toggleSidedrawer(s) {
+    s.sidebarVisible.set(!s.sidebarVisible());
   }
 };
 
@@ -103,7 +107,7 @@ let bal = hg.value(42);
 let navState = hg.struct({
   // TODO: is a change in URL enough to assume page changes, or should I use an immutable surrogate?
   url: Router(),
-  state: obsobs(),
+  state: obsobs({ title: 'Loading...' }),
   activeRequest: hg.value(null)
 });
 
@@ -149,35 +153,6 @@ let isNavigating = false;
     oldStateVal = newStateVal;
   });
 }
-
-let appState = hg.state({
-  dumpState: dbq.keyArray(),
-  showDesignDocs: hg.value(false),
-  accts,
-  ledger,
-  
-  // not sure about putting something here that isn't serializable...
-  // not to mention, mutable props; custom thunks?
-  navState,
-  
-  channels
-});
-
-window.appState = appState;
-
-let router = (fun, url) =>
-{
-  url = url || navState.url();
-  if (!(url instanceof URL)) url = new URL(url);
-  
-  url = url.hash[1] === '/'
-    ? new URL(url.origin + url.hash.slice(1))
-    : url;
-  
-  return fun(url.href);
-}.bind(null, routeMap(index));
-
-let getPage = url => router(url).fn;
 
 let createCancellationToken = () =>
 {
@@ -261,119 +236,40 @@ let navigate = co.wrap(function*(url, opts)
   navigate(document.location.href, { async: false })
 //  , 0);
 
-// rendering
-
 hg.Delegator().addGlobalEventListener('click', handleClick);
 function handleClick(e)
 {
   if (e.ctrlKey || e.shiftKey || e.button !== 0) return;
   
   let a = e.target;
-  if (a.tagName.toLowerCase() !== 'a') return; // TODO: other exceptions?
+  if (a.tagName.toLowerCase() !== 'a' || !a.href) return; // TODO: other exceptions?
   
   e.preventDefault();
   
   navigate(a.href);
 }
 
-let a = (text, href, opts) =>
-{
-  opts = opts ? Object.assign(opts, { href }) : { href };
-  return h('a', opts, text);
-};
+let appState = hg.state({
+  dumpState: dbq.keyArray(),
+  showDesignDocs: hg.value(false),
+  accts,
+  ledger,
+  
+  // not sure about putting something here that isn't serializable...
+  // not to mention, mutable props; custom thunks?
+  navState,
+  sidebarVisible: hg.value(true),
+  
+  channels
+});
 
-function renderNav()
-{
-  return h('nav',
-    h('ul', [
-      h('li', a('home', '/')),
-      h('li', a('edit', '#/accounts/6192115')),
-      h('li', a('new', '#/accounts'))
-    ])
-  );
-}
-
-function renderPage(navState)
-{
-  try
-  {
-    return getPage(navState.url).render(navState.state);
-  }
-  catch(e)
-  {
-    return h('pre', e.stack);
-  }
-}
-
-let lbl = (n, c, a) => h('.mui-textfield', [h(c, a), h('label', n)]);
-
-const required = true;
-
-function renderForm2(chs)
-{
-  return h('form', { 'ev-submit': hg.sendSubmit(chs.xactAdd) },
-    h('legend', 'Create transaction'),
-    lbl('From', 'input', { name: 'from', required, attributes: { list: 'accts' } }),
-    lbl('To', 'input', { name: 'to', required, attributes: { list: 'accts' } }),
-    lbl('Amount', 'input', { name: 'amt', type: 'number', step: 0.01, required }),
-    h('button', 'Create')
-  );
-}
+window.appState = appState;
 
 let stop = hg.app(
   document.body,
   appState,
-  (s) =>
-  {
-    let chs = s.channels;
-    
-    //j`
-    //div
-    //  ${[renderNav]}
-    //  .flex-container
-    //    ${hg.partial(renderPage, s.navState)}
-    //    ${hg.partial(renderForm2, chs)}
-    //    form
-    //      datalist#accts
-    //        ${s.accts.map(a => j`option(value=${a.name})`)}
-    //  .flex-container
-    //    pre#dbdump
-    //      lbl Show full dump
-    //        input(name=full-dump, type=checkbox, ev-change=#{hg.sendChange(chs.toggleFullDump)})
-    //      ${s.dumpState
-    //          .filter(d => s.showDesignDocs || d._id[0] !== '_')
-    //          .map(d => j`
-    //            div
-    //              ${JSON.stringify(d, null, 2).replace(/\\n/g, '\n')}
-    //              span.del(ev-click=${hg.send(chs.docDel, d)})
-    //            `)}
-    //`;
-    
-    return h('.mui-container', [
-      hg.partial(renderNav),
-      h('.mui-panel', [
-        h('.mui-panel', hg.partial(renderPage, s.navState)),
-        h('.mui-panel', hg.partial(renderForm2, chs)),
-        h('form', [
-          h('datalist#accts',
-            _.map(s.accts, a => h('option', { value: a.name }))
-          )
-        ])
-      ]),
-      h('.mui-panel', [
-        h('pre#dbdump', [
-          lbl('Show full dump', 'input', { name: 'full-dump', type: 'checkbox', 'ev-change': hg.sendChange(chs.toggleFullDump) }),
-          s.dumpState
-            .filter(d => s.showDesignDocs || d._id[0] !== '_')
-            .map(d =>
-              h('div', [
-                JSON.stringify(d, null, 2).replace(/\\n/g, '\n'),
-                h('span.del', { 'ev-click': hg.send(chs.docDel, d) })
-              ]))
-        ]),
-        h('pre', JSON.stringify(s.navState, null, 2))
-      ])
-    ]);
-  });
+  renderMain);
   
-});
+}); // end index creation promise
+
+export let __hotreload = true;

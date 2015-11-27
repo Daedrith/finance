@@ -55,8 +55,10 @@ export default {
   AccountForm(doc)
   {
     doc = doc || hg.value({ name: '' });
+    let title = hg.computed([doc], d => `Accounts > ${(d && d.name) || 'New'}`);
     // TODO: extract a local copy to be bound to form?
     return hg.state({
+      title,
       doc, // dereferencing doc is going to get old... observ interesting subkeys?
            // grr... but the blacklisted "name" key
       ready: toReadyObserv(doc.ready),

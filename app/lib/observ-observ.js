@@ -29,7 +29,7 @@ export default function(nestedObs)
     }
   });
   
-  obs.observ = nestedObs;
+  obs.set(nestedObs);
   
   return obs;
 };

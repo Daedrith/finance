@@ -3,9 +3,7 @@ import hg from 'mercury';
 export default {
   init(params, opts)
   {
-    let { async } = opts;
-    let state = this.Home();
-    return async ? Promise.resolve(state) : state;
+    return this.Home();
   },
   render(s)
   {
@@ -17,6 +15,7 @@ export default {
   Home()
   {
     return hg.state({
+      title: hg.value('Home')
     });
   }
 };

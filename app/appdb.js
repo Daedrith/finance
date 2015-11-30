@@ -5,7 +5,10 @@ let appdb = new PouchDB('finance');
 window.appdb = appdb;
 appdb.on('error', () => { debugger; });
 
-appdb.createIndex= (name, map, reduce) =>
+// TODO: error tracking library
+let log = console.log.bind(console);
+
+appdb.createIndex = (name, map, reduce) =>
 {
   map = map.toString();
   reduce = reduce && reduce.toString();

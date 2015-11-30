@@ -23,23 +23,9 @@ function renderPage(navState)
   }
 }
 
-let lbl = (n, c, a) => h('.mui-textfield', [h(c, a), h('label', n)]);
-
-const required = true;
-
-function renderForm2(chs)
-{
-  return h('form', { 'ev-submit': hg.sendSubmit(chs.xactAdd) }, [
-    h('legend', 'Create transaction'),
-    lbl('From', 'input', { name: 'from', required, attributes: { list: 'accts' } }),
-    lbl('To', 'input', { name: 'to', required, attributes: { list: 'accts' } }),
-    lbl('Amount', 'input', { name: 'amt', type: 'number', step: 0.01, required }),
-    h('button', 'Create')
-  ]);
-}
-
 function renderNav()
 {
+  // TODO: drive from state
   return h('nav#sidedrawer.mui--no-user-select', [
     h('#sidedrawer-brand.mui--appbar-line-height mui--text-title', 'Finance'),
     h('.mui-divider'),
@@ -57,8 +43,30 @@ function renderNav()
           h('li', a('Edit Account', '#/accounts/6192115'))
         ])
       ]),
+      h('li', [
+        h('strong', 'Transactions'),
+        h('ul', [
+          h('li', a('New Transaction', '#/xacts')),
+          h('li', a('Edit Transaction', '#/xacts/6192115'))
+        ])
+      ]),
     ])
   ]);
+}
+
+function renderAppbar(title, chs)
+{
+  return h('header#header',
+    h('nav.mui-appbar.mui--appbar-line-height',
+      h('.mui-container-fluid', [
+        //h('a.sidedrawer-toggle.mui--visible-xs-inline-block', '☰'),
+        //h('a.sidedrawer-toggle.mui--hidden-xs', {
+        h('a.sidedrawer-toggle', {
+            'ev-click': hg.send(chs.toggleSidedrawer)
+          }, '☰'),
+        h('span.mui--text-title.mui--visible-xs-inline-block', 'Finance'),
+        h('span.mui--text-title.mui--hidden-xs', title)
+      ])));
 }
 
 export default (s) =>
@@ -69,34 +77,29 @@ export default (s) =>
   {
     body.classList.toggle('hide-sidedrawer');
   }
-  
+
   let chs = s.channels;
   return h('div', [
     hg.partial(renderNav),
-    h('header#header',
-      h('nav.mui-appbar.mui--appbar-line-height',
-        h('.mui-container-fluid', [
-          //h('a.sidedrawer-toggle.mui--visible-xs-inline-block', '☰'),
-          //h('a.sidedrawer-toggle.mui--hidden-xs', {
-          h('a.sidedrawer-toggle', {
-              'ev-click': hg.send(chs.toggleSidedrawer)
-            }, '☰'),
-          h('span.mui--text-title.mui--visible-xs-inline-block', 'Finance'),
-          h('span.mui--text-title.mui--hidden-xs', s.navState.state.title)
-        ]))),
+    hg.partial(renderAppbar, s.navState.state.title, chs),
     h('#content-wrapper', [
       h('.mui--appbar-height'),
       h('.mui-container-fluid', [
         h('.mui-panel', hg.partial(renderPage, s.navState)),
-        h('.mui-panel', hg.partial(renderForm2, chs)),
         h('form', [
           h('datalist#accts',
             Object.values(s.accts).map(a => h('option', { value: a.name }))
           )
         ]),
-        h('.mui-panel', [
+        h('h3', 'NavState dump'),
+        h('.mui-panel',
+          h('pre', JSON.stringify(s.navState, null, 2))),
+        h('h3', 'Database dump'),
+        h('.mui-panel',
           h('pre#dbdump', [
-            lbl('Show full dump', 'input', { name: 'full-dump', type: 'checkbox', 'ev-change': hg.sendChange(chs.toggleFullDump) }),
+            h('span', ['Listener count: ', ''+s.listenerCount]),
+            h('.mui-checkbox',
+              h('label', [h('input', { name: 'full-dump', type: 'checkbox', 'ev-change': hg.sendChange(chs.toggleFullDump) }), 'Show full dump'])),
             s.dumpState
               .filter(d => s.showDesignDocs || d._id[0] !== '_')
               .map(d =>
@@ -105,8 +108,7 @@ export default (s) =>
                   h('span.del', { 'ev-click': hg.send(chs.docDel, d) })
                 ]))
           ]),
-          h('pre', JSON.stringify(s.navState, null, 2))
-        ])
+        )
       ])
     ]),
     h('footer#footer',

@@ -17,7 +17,15 @@ export default function(s)
   let d = s.doc;
   
   return h('form', { 'ev-submit': hg.sendSubmit(s.channels.save) }, [
-    h('legend', (d._id ? 'Update' : 'Create') + ' Account'),
+    h('legend', 'Create transaction'),
+    lbl('From', 'input', { name: 'from', required, attributes: { list: 'accts' } }),
+    lbl('To', 'input', { name: 'to', required, attributes: { list: 'accts' } }),
+    lbl('Amount', 'input', { name: 'amt', type: 'number', step: 0.01, required }),
+    h('button.mui-btn.mui-btn--raised', d._id ? 'Update' : 'Create')
+  ]);
+  
+  return h('form', { 'ev-submit': hg.sendSubmit(s.channels.save) }, [
+    h('legend', 'Create Account'),
     lbl('Name', 'input', { name: 'name', required, value: d.name }),
     h('button.mui-btn.mui-btn--raised', d._id ? 'Update' : 'Create')
   ]);

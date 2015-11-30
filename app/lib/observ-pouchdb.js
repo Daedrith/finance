@@ -6,9 +6,10 @@ import hg from 'mercury'; // TOOD: import individual modules
 //import ObservVarhash from 'mercury/observ-varhash';
 //import ObservValue from 'observ';
 
-//import Observ2 from '../../lib/observ2';
-let Observ2 = hg.value;
-import {log} from './utils';
+import createObservProp from './es5-observ';
+import utils from './utils';
+
+let {log, trace} = utils;
 
 let { array: ObservArray, varhash: ObservVarhash, value: ObservValue } = hg;
 
@@ -17,16 +18,31 @@ export default class
   constructor(db)
   {
     this.db = db;
-    
+
     this._changes = db.changes({ live: true, include_docs: true, since: 'now' });
+    this.listenerCountObs = createObservProp(this, 'listenerCount', 0);
   }
-  
+
+  onChanges(listener)
+  {
+    trace('add');
+    this._changes.on('change', listener);
+    this.listenerCount++;
+    return this._removeChangeListener.bind(this, listener);
+  }
+  _removeChangeListener(listener)
+  {
+    trace('rm');
+    this._changes.removeListener('change', listener);
+    this.listenerCount--;
+  }
+
   keyArray(opts)
   {
     opts = opts || {};
 
     let observ = ObservArray([]);
-    
+
     // TODO: avoid mutating opts?
     if (opts.startkey != null && opts.endkey == null)
     {
@@ -35,7 +51,7 @@ export default class
       opts.endkey = opts.startkey.slice(0, -1) + c;
       opts.inclusive_end = false;
     }
-    
+
     let initQuery = Object.assign({ include_docs: true }, opts);
     observ.ready = this.db
       .allDocs(initQuery)
@@ -43,7 +59,7 @@ export default class
       .then(res =>
       {
         observ.set(res.rows.map(d => ObservValue(d.doc)));
-      
+
         let processChange = c =>
         {
           // TODO: account for inclusive_end
@@ -52,7 +68,7 @@ export default class
           {
             return;
           }
-          
+
           let ind;
           observ.some((d, i) =>
           {
@@ -62,18 +78,17 @@ export default class
               return true;
             }
           });
-          
+
           if (c.deleted) observ.splice(ind, 1);
           else if (ind != null) observ.get(ind).set(c.doc);
           // insert in order?
           else observ.push(ObservValue(c.doc));
         };
-        
-        this._changes.on('change', processChange);
-        observ.dispose = () => this._changes.removeListener('change', processChange);
+
+        observ.dispose = this.onChanges(processChange);
         return observ;
       });
-    
+
     return observ;
   }
 
@@ -85,7 +100,7 @@ export default class
     // TODO: use custom observable to remove change query
     // - also possibly consolidate to one change feed and subscribe (borrow a pubsub impl. from somewhere?)
     let obj = ObservVarhash({}, valueConstructor || ObservValue);
-    
+
     if (opts.startkey != null && opts.endkey == null)
     {
       let c = String.fromCharCode(
@@ -93,7 +108,7 @@ export default class
       opts.endkey = opts.startkey.slice(0, -1) + c;
       opts.inclusive_end = false;
     }
-    
+
     // TODO: do we use struct or value?
     let initQuery = Object.assign({ include_docs: true }, opts);
     this.db
@@ -103,19 +118,19 @@ export default class
       {
         for (let d of res.rows) obj.put(d.id, d.doc);
       });
-    
+
     if (opts.startkey != null)
     {
       // TODO: account for inclusive_end
       opts.filter = d => opts.startkey <= d._id < opts.endkey;
     }
-    
+
     let changeQuery = Object.assign({
       live: true,
       include_docs: true,
       since: 'now'
     }, opts);
-    
+
     this.db
       .changes(changeQuery)
       .on('change', c =>
@@ -123,7 +138,7 @@ export default class
         if (c.deleted) obj.del(c.id);
         else obj.put(c.id, c.doc);
       });
-    
+
     return obj;
   }
 
@@ -132,9 +147,9 @@ export default class
   queryObject(view, opts)
   {
     opts = opts || {};
-    
+
     let hash = ObservVarhash({}, ObservValue);
-    
+
     if (opts.startkey != null && opts.endkey == null)
     {
       // could better be written recursively...
@@ -147,12 +162,12 @@ export default class
       opts.endkey = Array.isArray(opts.startkey)
         ? [genEndKey(opts.startkey[0])]
         : genEndKey(opts.startkey);
-      
+
       opts.inclusive_end = false;
     }
-    
+
     let viewQuery = Object.assign({ include_docs: true }, opts);
-    
+
     let refresh = () =>
     {
       this.db
@@ -183,7 +198,7 @@ export default class
           }
         });
     };
-    
+
     let changeQuery = Object.assign(
       {
         live: true,
@@ -195,52 +210,51 @@ export default class
     this.db
       .changes(changeQuery)
       .on('change', c => refresh());
-    
+
     refresh();
-    
+
     return hash;
   }
 
   keyValue(id, opts)
   {
     let { defaultValue } = opts;
-    
+
     let val = ObservValue(defaultValue);
-    
+
     val.ready = this.db
       .get(id, opts)
       .catch(log)
       .then(doc =>
       {
         val.set(doc);
-        
+
         let processChange = c =>
         {
           if (c.id !== id) return;
-          
+
           // hmm... dispose ourselves in case of delete?
           val.set(c.deleted ? null : c.doc);
         };
-        
-        this._changes.on('change', processChange);
-        val.dispose = () => this._changes.removeListener('change', processChange);
-        
+
+        val.dispose = this.onChanges(processChange);
+
         val.ready.yet = true;
-        
+
         return val;
       });
-      
+
     if (!val.ready.yet) val.ready.yet = false;
-    
+
     return val;
   }
-  
+
   queryValue(view, opts)
   {
     opts = opts || {};
-    
+
     let val = ObservValue(null);
-    
+
     // TODO: serialize?
     let refresh = () =>
     {
@@ -249,9 +263,9 @@ export default class
         .catch(log)
         .then(res => val.set(res.rows[0].value));
     };
-    
+
     refresh();
-    
+
     changeQuery = {
       live: true,
       since: 'now',
@@ -261,7 +275,7 @@ export default class
     this.db
       .changes(changeQuery)
       .on('change', refresh);
-    
+
     return val;
   }
 }

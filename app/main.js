@@ -23,13 +23,13 @@ let queries = {
   ledger(d)
   {
     if (d._id < 'xact-' || 'xact.' <= d._id) return;
-    
+
     if (d._deleted)
     {
       emit(null, d);
       return;
     }
-    
+
     let postDate = Number(d._id.slice(5));
     for (let x of d.offsets)
     {
@@ -39,13 +39,13 @@ let queries = {
   acctSum(d)
   {
     if (d._id < 'xact-' || 'xact.' <= d._id) return;
-    
+
     if (d._deleted)
     {
       emit(null, d);
       return;
     }
-    
+
     let postDate = Number(d._id.slice(5));
     for (let x of d.offsets)
     {
@@ -65,22 +65,6 @@ Promise.all(indexPromises).then(() =>
 // channels
 
 let channels = {
-  xactAdd(s, d) {
-    let postDate = createDate = Date.now();
-    let createDate = postDate;
-    appdb.put({
-      _id: 'xact-' + postDate,
-      _rev: d._rev,
-      createDate,
-      status: 'verified',
-      offsets: [
-        { acct: _.findWhere(s.accts(), { name: d.from })._id,
-          sub: 100 * d.amt },
-        { acct: _.findWhere(s.accts(), { name: d.to })._id,
-          add: 100 * d.amt }
-      ]
-    });
-  },
   docDel(s, d) {
     appdb.remove(d).catch(log);
   },
@@ -123,7 +107,7 @@ let isNavigating = false;
     if (oldState && oldUrl !== s.url)
     {
       getPage(oldUrl).dispose(oldState);
-      
+
       if (!isNavigating)
       {
         // user clicked back or entered a URL or something;
@@ -133,21 +117,21 @@ let isNavigating = false;
           0);
       }
     }
-    
+
     // TODO: get rid of these ugly null checks
     let newState = navState.state.observ;
     let newStateVal;
     if (newState)
     {
       newStateVal = newState();
-      
+
       if (newStateVal !== oldStateVal)
       {
         // relies on Router executing pushState first
         window.history.replaceState(newStateVal, document.title);
       }
     }
-    
+
     oldUrl = s.url;
     oldState = newState;
     oldStateVal = newStateVal;
@@ -162,7 +146,7 @@ let createCancellationToken = () =>
     resolve = res;
     reject = rej;
   });
-  
+
   // HACK: es6.promise is polyfilling the native Promise;
   // we need to make the internal prop it uses non-enumerable for serialization
   if ('_d' in ct) {
@@ -170,14 +154,14 @@ let createCancellationToken = () =>
       enumerable: false
     });
   }
-  
+
   let cancelled = null;
   Object.defineProperties(ct, {
     cancelled: { get: () => cancelled, enumerable: true },
     cancel: { value: () => resolve(cancelled = true) },
     dispose: { value: () => resolve(cancelled = false) }
   });
-  
+
   return ct;
 };
 
@@ -187,20 +171,20 @@ let navigate = co.wrap(function*(url, opts)
   let route = router(url);
   // TODO: avoid throwing an error?
   if (!route) throw new Error('Could not resolve ' + url.href);
-  
+
   let prevRequest = navState.activeRequest();
   if (prevRequest) prevRequest.cancel();
-  
+
   let ct = createCancellationToken();
-  
+
   navState.activeRequest.set(ct);
-  
+
   opts = Object.assign({ async: true, ct }, opts);
   let { async } = opts;
-  
+
   let page = route.fn;
   let state = page.init(route.params, opts);
-  
+
   if (async && state.ready && !state.ready.yet)
   {
     yield state.ready;
@@ -212,7 +196,7 @@ let navigate = co.wrap(function*(url, opts)
       throw new Error('Navigation cancelled');
     }
   }
-  
+
   // TODO: how do we support a replaceState option?
   // - perhaps we need to model the History API more accurately:
   //   a stack of {url, title, state} entries, so that we can
@@ -221,18 +205,18 @@ let navigate = co.wrap(function*(url, opts)
   //   choose to dispose a state only once it is popped off)
   isNavigating = true;
   navState.state.observ = state;
-  navState.set({
+  navState.set({ // FIXME: grr... not atomic
     url,
     state: state(),
     activeRequest: null
   });
   isNavigating = false;
-  
+
   ct.dispose();
 });
 
 // TODO: loading screen?
-//setTimeout(() => 
+//setTimeout(() =>
   navigate(document.location.href, { async: false })
 //  , 0);
 
@@ -240,12 +224,12 @@ hg.Delegator().addGlobalEventListener('click', handleClick);
 function handleClick(e)
 {
   if (e.ctrlKey || e.shiftKey || e.button !== 0) return;
-  
+
   let a = e.target;
   if (a.tagName.toLowerCase() !== 'a' || !a.href) return; // TODO: other exceptions?
-  
+
   e.preventDefault();
-  
+
   navigate(a.href);
 }
 
@@ -254,12 +238,13 @@ let appState = hg.state({
   showDesignDocs: hg.value(false),
   accts,
   ledger,
-  
+  listenerCount: dbq.listenerCountObs,
+
   // not sure about putting something here that isn't serializable...
   // not to mention, mutable props; custom thunks?
   navState,
   sidebarVisible: hg.value(true),
-  
+
   channels
 });
 
@@ -269,7 +254,7 @@ let stop = hg.app(
   document.body,
   appState,
   renderMain);
-  
+
 }); // end index creation promise
 
 export let __hotreload = true;

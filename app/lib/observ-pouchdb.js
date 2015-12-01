@@ -25,14 +25,12 @@ export default class
 
   onChanges(listener)
   {
-    trace('add');
     this._changes.on('change', listener);
     this.listenerCount++;
     return this._removeChangeListener.bind(this, listener);
   }
   _removeChangeListener(listener)
   {
-    trace('rm');
     this._changes.removeListener('change', listener);
     this.listenerCount--;
   }

@@ -88,55 +88,31 @@ let ledger = dbq.queryObject('ledger', {
 //});
 let bal = hg.value(42);
 
+let { obs: pageState, obsobs: pageObs } = obsobs({ title: 'Loading...' });
+
 let navState = hg.struct({
   // TODO: is a change in URL enough to assume page changes, or should I use an immutable surrogate?
-  url: Router(),
-  state: obsobs({ title: 'Loading...' }),
+  url: hg.value(null),
+  pageObs,
   activeRequest: hg.value(null)
 });
 
 let isNavigating = false;
 
-// handle navState changes
+let currentUrl = Router();
+currentUrl(href =>
 {
-  let oldUrl = null
-  let oldState = null;
-  let oldStateVal = null;
-  navState(s =>
-  {
-    if (oldState && oldUrl !== s.url)
-    {
-      getPage(oldUrl).dispose(oldState);
+  if (isNavigating) return;
 
-      if (!isNavigating)
-      {
-        // user clicked back or entered a URL or something;
-        // navigate didn't change URL
-        setTimeout(
-          () => navigate(s.url, { async: false }),
-          0);
-      }
-    }
+  navigate(href, { async: false, history: 'noop' });
+});
 
-    // TODO: get rid of these ugly null checks
-    let newState = navState.state.observ;
-    let newStateVal;
-    if (newState)
-    {
-      newStateVal = newState();
+pageState(s =>
+{
+  if (isNavigating) return;
 
-      if (newStateVal !== oldStateVal)
-      {
-        // relies on Router executing pushState first
-        window.history.replaceState(newStateVal, document.title);
-      }
-    }
-
-    oldUrl = s.url;
-    oldState = newState;
-    oldStateVal = newStateVal;
-  });
-}
+  window.history.replaceState(s, s.title);
+});
 
 let createCancellationToken = () =>
 {
@@ -166,6 +142,7 @@ let createCancellationToken = () =>
 };
 
 // TODO: maybe use the async transform instead?
+// this is kinda imparative rather than reactive; is there a better pattern?
 let navigate = co.wrap(function*(url, opts)
 {
   let route = router(url);
@@ -197,28 +174,37 @@ let navigate = co.wrap(function*(url, opts)
     }
   }
 
-  // TODO: how do we support a replaceState option?
-  // - perhaps we need to model the History API more accurately:
-  //   a stack of {url, title, state} entries, so that we can
-  //   push/replace/popstate with normal state manipulation,
-  //   as well as capture that happening externally (e.g. we can
-  //   choose to dispose a state only once it is popped off)
+  // dispose of the old state
+  let oldUrl = navState.url();
+  if (oldUrl) getPage(oldUrl).dispose(navState.pageObs());
+
   isNavigating = true;
-  navState.state.observ = state;
-  navState.set({ // FIXME: grr... not atomic
+
+  // grr... not atomic
+  // this will also trigger a new value on pageState, but since we're in the
+  // isNavigating guard, the only thing which should act on it is rendering,
+  // and since that gets deferred to RAF, we shouldn't get mixed up with the
+  // wrong state rendered by the wrong page
+  navState.set({
     url,
-    state: state(),
+    pageObs: state,
     activeRequest: null
   });
+
+  if (opts.history !== 'noop')
+  {
+    let stateVal = state();
+    let historyAction = opts.history === 'replace' ? history.replaceState : history.pushState;
+    historyAction.call(history, stateVal, stateVal.title, url);
+  }
+
   isNavigating = false;
 
   ct.dispose();
 });
 
 // TODO: loading screen?
-//setTimeout(() =>
-  navigate(document.location.href, { async: false })
-//  , 0);
+navigate(document.location.href, { async: false, history: 'noop' });
 
 hg.Delegator().addGlobalEventListener('click', handleClick);
 function handleClick(e)
@@ -230,6 +216,7 @@ function handleClick(e)
 
   e.preventDefault();
 
+  // TODO: navigating to the same href as current url?
   navigate(a.href);
 }
 
@@ -243,6 +230,7 @@ let appState = hg.state({
   // not sure about putting something here that isn't serializable...
   // not to mention, mutable props; custom thunks?
   navState,
+  pageState,
   sidebarVisible: hg.value(true),
 
   channels

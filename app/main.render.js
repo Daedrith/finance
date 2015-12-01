@@ -11,11 +11,11 @@ let a = (text, href, opts) =>
   return h('a', opts, text);
 };
 
-function renderPage(navState)
+function renderPage(url, pageState)
 {
   try
   {
-    return getPage(navState.url).render(navState.state);
+    return getPage(url).render(pageState);
   }
   catch(e)
   {
@@ -81,11 +81,11 @@ export default (s) =>
   let chs = s.channels;
   return h('div', [
     hg.partial(renderNav),
-    hg.partial(renderAppbar, s.navState.state.title, chs),
+    hg.partial(renderAppbar, s.pageState.title, chs),
     h('#content-wrapper', [
       h('.mui--appbar-height'),
       h('.mui-container-fluid', [
-        h('.mui-panel', hg.partial(renderPage, s.navState)),
+        h('.mui-panel', hg.partial(renderPage, s.navState.url, s.pageState)),
         h('form', [
           h('datalist#accts',
             Object.values(s.accts).map(a => h('option', { value: a.name }))

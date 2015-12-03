@@ -78,6 +78,12 @@ export default (s) =>
     body.classList.toggle('hide-sidedrawer');
   }
 
+  // HACK: manipulating document.title; do outside RAF?
+  if (document.title !== (s.pageState.title || "Finance"))
+  {
+    document.title = s.pageState.title || "Finance";
+  }
+
   let chs = s.channels;
   return h('div', [
     hg.partial(renderNav),
@@ -85,15 +91,8 @@ export default (s) =>
     h('#content-wrapper', [
       h('.mui--appbar-height'),
       h('.mui-container-fluid', [
-        h('.mui-panel', hg.partial(renderPage, s.navState.url, s.pageState)),
-        h('form', [
-          h('datalist#accts',
-            Object.values(s.accts).map(a => h('option', { value: a.name }))
-          )
-        ]),
-        h('h3', 'NavState dump'),
-        h('.mui-panel',
-          h('pre', JSON.stringify(s.navState, null, 2))),
+        hg.partial(renderPage, s.navState.url, s.pageState),
+
         h('h3', 'Database dump'),
         h('.mui-panel',
           h('pre#dbdump', [

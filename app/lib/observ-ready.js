@@ -1,21 +1,27 @@
 import hg from 'mercury'; // TODO: import just observ
 
-export default function toReadyObserv(ready)
+export default function toReadyObserv(...readys)
 {
-  if (!ready)
+  let allReady = readys.every(r => !r || r.yet);
+  if (allReady)
   {
-    ready = Promise.resolve(true);
-    ready.yet = true;
+    let p = Promise.resolve(true);
+    let ret = hg.value(true);
+    ret.then = p.then.bind(p);
+    ret.yet = true;
+    return ret;
   }
-  
+
+  let ready = Promise.all(readys);
+
   let obs = hg.value(ready.yet);
   obs.then = ready.then.bind(ready);
-  obs.yet = ready.yet;
-  if (!ready.yet) ready.then(() =>
+  obs.yet = false;
+  ready.then(() =>
   {
     obs.set(obs.yet = true);
     return true;
   });
-  
+
   return obs;
 };

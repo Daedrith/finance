@@ -83,6 +83,7 @@ export default class
           else observ.push(ObservValue(c.doc));
         };
 
+        observ.ready.yet = true;
         observ.dispose = this.onChanges(processChange);
         return observ;
       });
@@ -92,13 +93,9 @@ export default class
 
   keyObject(opts, valueConstructor)
   {
-    opts = opts || {};
+    opts = Object.assign({ include_docs: true }, opts);
 
     // TODO: avoid mutating opts?
-    // TODO: use custom observable to remove change query
-    // - also possibly consolidate to one change feed and subscribe (borrow a pubsub impl. from somewhere?)
-    let obj = ObservVarhash({}, valueConstructor || ObservValue);
-
     if (opts.startkey != null && opts.endkey == null)
     {
       let c = String.fromCharCode(
@@ -107,14 +104,33 @@ export default class
       opts.inclusive_end = false;
     }
 
+    let obj = ObservVarhash({}, valueConstructor || ObservValue);
+
     // TODO: do we use struct or value?
-    let initQuery = Object.assign({ include_docs: true }, opts);
-    this.db
-      .allDocs(initQuery)
+    obj.ready = this.db
+      .allDocs(opts)
       .catch(log)
       .then(res =>
       {
         for (let d of res.rows) obj.put(d.id, d.doc);
+
+        let processChange = c =>
+        {
+          // TODO: account for inclusive_end
+          if (opts.startkey != null
+            && !(c => opts.startkey <= c.id && c.id < opts.endkey))
+          {
+            return;
+          }
+
+          if (c.deleted) obj.delete(c.id);
+          else obj.put(c.id, c.doc);
+        };
+
+        obj.ready.yet = true;
+        // FIXME: if we try to call dispose be this continuation runs
+        obj.dispose = this.onChanges(processChange);
+        return obj;
       });
 
     if (opts.startkey != null)
@@ -241,8 +257,6 @@ export default class
 
         return val;
       });
-
-    if (!val.ready.yet) val.ready.yet = false;
 
     return val;
   }

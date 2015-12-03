@@ -76,9 +76,6 @@ let channels = {
   }
 };
 
-let accts = dbq.keyObject({
-  startkey: 'acct-'
-});
 let ledger = dbq.queryObject('ledger', {
   startkey: ['acct-2884365']
   // TODO: reduction for running total; probably do a custom one client-side
@@ -111,6 +108,7 @@ pageState(s =>
 {
   if (isNavigating) return;
 
+  // save pageState value in history stack
   window.history.replaceState(s, s.title);
 });
 
@@ -223,7 +221,6 @@ function handleClick(e)
 let appState = hg.state({
   dumpState: dbq.keyArray(),
   showDesignDocs: hg.value(false),
-  accts,
   ledger,
   listenerCount: dbq.listenerCountObs,
 

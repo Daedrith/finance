@@ -35,8 +35,8 @@ Framework
         - Maybe figure out some kind of side-channel for status?
   - Manager class
     - Doesn't feel very functional / FRP
-    - Only one change feed subscription to PouchDB, which is then filtered to the observables
-      - Might be premature optimization; either test or look at source code
+    - Rewrite other observable adapters to latest convention
+    - Querying API?
   - Future: rewind/fast-forward
 - CSS framework
   - bootstrap cards? MUI?
@@ -50,7 +50,7 @@ Framework
   - validation
     - html5 validation rocks. However, need to think about errors down the line (e.g. local-db error, remote db error). Command-Query Separation tells us that the command should be fire-and-forget, and... (forgot what I was going to write here)
   - would need a schema system... probably overkill for now
-  
+
 Views
 -----
 
@@ -62,7 +62,7 @@ Views
 - acct list/hierarchy
 - acct ledger
   - acct+subs ledger
-  - 
+  -
 - xact add/edit?
 
 Channels

@@ -54,14 +54,16 @@ export default {
       channels: {
         save(s, form) {
           // TODO: form cycle events
-          let postDate = Date.now();
+          let postDate = form.createDate
+            ? localStringToDate(form.createDate)
+            : new Date();
           let createDate = postDate;
           let doc = s.doc();
           appdb.put({
-            _id: doc._id || 'xact-' + postDate,
+            _id: doc._id || 'xact-' + postDate.toISOString(),
             _rev: doc._rev,
-            createDate,
-            status: 'verified',
+            createDate: createDate.toISOString(),
+            status: form.status,
             offsets: [
               { acct: _.findWhere(s.accts(), { name: form.from })._id,
                 sub: 100 * form.amt },

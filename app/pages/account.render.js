@@ -13,10 +13,10 @@ export default function(s)
     // TODO: overlay or something
     return h('h3', 'Loading...');
   }
-  
+
   let d = s.doc;
-  
-  return h('form', { 'ev-submit': hg.sendSubmit(s.channels.save) }, [
+
+  return h('form.mui-panel', { 'ev-submit': hg.sendSubmit(s.channels.save) }, [
     h('legend', (d._id ? 'Update' : 'Create') + ' Account'),
     lbl('Name', 'input', { name: 'name', required, value: d.name }),
     h('button.mui-btn.mui-btn--raised', d._id ? 'Update' : 'Create')

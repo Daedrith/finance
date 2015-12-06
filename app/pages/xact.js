@@ -1,7 +1,7 @@
 import hg from 'mercury';
 import _ from 'underscore';
 import render from './xact.render';
-import getAccts from '../data/accts';
+import Accts from '../data/accts';
 
 import dbq from '../querydb';
 import toReadyObserv from '../lib/observ-ready';
@@ -22,7 +22,7 @@ export default {
       ? dbq.keyValue('xact-' + params.id, opts)
       : null;
 
-    let accts = getAccts();
+    let accts = Accts.getIdHash();
 
     let state = this.XactForm(doc, accts);
 
@@ -43,13 +43,27 @@ export default {
   },
   XactForm(doc, accts)
   {
-    doc = doc || hg.value({ });
-    let title = hg.computed([doc], d => `Transactions > ${(d && d._id) || 'New'}`);
     // TODO: extract a local copy to be bound to form?
+    doc = doc || hg.value({ status: 'verified', offsets: [{}] });
+
+    let blankOffset = {
+      acct: Accts.finder()
+    };
+
+    let offsets = hg.array(
+      doc().offsets.map(o => hg.struct({
+        acct: Accts.finder(o.acct),
+        add: hg.value(o.add),
+        sub: hg.value(o.sub),
+      }))
+      .concat([hg.struct(blankOffset)]));
+
+    let title = hg.computed([doc], d => `Transactions > ${(d && d._id) || 'New'}`);
     return hg.state({
       title,
       doc,
       accts,
+      offsets,
       ready: toReadyObserv(doc.ready, accts.ready),
       channels: {
         save(s, form) {

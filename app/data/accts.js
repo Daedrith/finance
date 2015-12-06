@@ -1,3 +1,6 @@
+import ObservStruct2 from '../lib/observ-struct2';
+import _ from 'underscore';
+
 import dbq from '../querydb.js';
 
 let refCount = 0;
@@ -10,26 +13,54 @@ let decAndDispose = dispose => () =>
 
   if (refCount === 0)
   {
-    console.trace('disposed');
     dispose();
-    dispose = null;
+    dispose = null
   }
 };
+
 let accts;
 
-export default function()
-{
-  if (refCount === 0)
+export default { // TODO: use individual exports
+  getIdHash()
   {
-    console.trace('created');
-    accts = dbq.keyObject({
-      startkey: 'acct-'
+    if (refCount === 0)
+    {
+      accts = dbq.keyObject({
+        startkey: 'acct-'
+      });
+
+      // HACK: dispose is set after ready
+      accts.ready.then(() => accts.dispose = decAndDispose(accts.dispose));
+    }
+
+    refCount++;
+    return accts;
+  },
+  finder(acct, accts)
+  {
+    accts = accts || this.getIdHash();
+    // return an observable shere setting the .name or ._id subkeys, sets the whole object to the corresponding object in accts
+    let obs = ObservStruct2({
+      _id: null,
+      _rev: null,
+      name: '',
     });
 
-    // HACK: dispose is set after ready
-    accts.ready.then(() => accts.dispose = decAndDispose(accts.dispose));
-  }
+    let setterRunning = false;
+    let setter = fun => arg =>
+    {
+      if (setterRunning) return;
 
-  refCount++;
-  return accts;
+      setterRunning = true;
+      obs.set(fun(arg));
+      setterRunning = false;
+    };
+
+    obs._id(setter(v => accts()[v]));
+    obs.name(setter(v => _.findWhere(accts(), v)));
+
+    if (acct) obs.set(acct);
+
+    return obs;
+  },
 };

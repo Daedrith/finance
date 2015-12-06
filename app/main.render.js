@@ -69,6 +69,34 @@ function renderAppbar(title, chs)
       ])));
 }
 
+function renderDebug(s)
+{
+  let chs = s.channels;
+  return h('.mui-row', [
+    h('.mui-col-md-6', [
+      h('h3', 'Database dump'),
+      h('.mui-panel',
+        h('pre#dbdump', [
+          h('span', ['Listener count: ', ''+s.listenerCount]),
+          h('.mui-checkbox',
+            h('label', [h('input', { name: 'full-dump', type: 'checkbox', 'ev-change': hg.sendChange(chs.toggleFullDump) }), 'Show full dump'])),
+          s.dumpState
+            .filter(d => s.showDesignDocs || d._id[0] !== '_')
+            .map(d =>
+              h('div', [
+                JSON.stringify(d, null, 2).replace(/\\n/g, '\n'),
+                h('span.del', { 'ev-click': hg.send(chs.docDel, d) })
+              ]))
+        ])
+      )
+    ]),
+    h('.mui-col-md-6', [
+      h('h3', 'Page state dump'),
+      h('pre.mui-panel', JSON.stringify(s.pageState, null, 2).replace(/\\n/g, '\n'))
+    ])
+  ]);
+}
+
 export default (s) =>
 {
   // HACK: MUI looks for this class on the body tag, but our vtree doesn't include it
@@ -93,21 +121,7 @@ export default (s) =>
       h('.mui-container-fluid', [
         hg.partial(renderPage, s.navState.url, s.pageState),
 
-        h('h3', 'Database dump'),
-        h('.mui-panel',
-          h('pre#dbdump', [
-            h('span', ['Listener count: ', ''+s.listenerCount]),
-            h('.mui-checkbox',
-              h('label', [h('input', { name: 'full-dump', type: 'checkbox', 'ev-change': hg.sendChange(chs.toggleFullDump) }), 'Show full dump'])),
-            s.dumpState
-              .filter(d => s.showDesignDocs || d._id[0] !== '_')
-              .map(d =>
-                h('div', [
-                  JSON.stringify(d, null, 2).replace(/\\n/g, '\n'),
-                  h('span.del', { 'ev-click': hg.send(chs.docDel, d) })
-                ]))
-          ]),
-        )
+        hg.partial(renderDebug, s),
       ])
     ]),
     h('footer#footer',

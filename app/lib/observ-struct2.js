@@ -34,6 +34,7 @@ export default function ObservStruct2(defaults)
   let timeoutId;
   let schedulePublish = () =>
   {
+    // TODO: immediate option?, or transaction mechanism to delay publish?
     if (!timeoutId) timeoutId = setTimeout(() =>
     {
       timeoutId = null;

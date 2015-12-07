@@ -2,57 +2,40 @@ import hg from 'mercury';
 
 let {h} = hg;
 
+let wrapField = (label, contents, hasPlaceholder) =>
+{
+  return h('.mui-textfield', hasPlaceholder ? contents : [contents, h('label', label)]);
+};
+
 export default {
-  labeledControl(label, controlTag, attributes)
+  wrapField,
+  control(label, tag, attributes)
   {
-    if (controlTag && controlTag.type === "VirtualNode")
+    if (tag && tag.type === "VirtualNode")
     {
-      return h('.mui-textfield', [controlTag, h('label', label)]);
+      return wrapField(label, tag, attributes);
     }
 
     if (!attributes)
     {
-      attributes = controlTag;
-      controlTag = 'input';
+      attributes = tag;
+      tag = 'input';
     }
 
-    if (!attributes.name)
+    if (!attributes.name) attributes.name = label[0].toLowerCase() + label.substr(1).replace(/ +/g, '');
+
+    if (!attributes.type) attributes.type = 'text';
+
+    if (typeof attributes.value === 'function' && attributes.value.set)
     {
-      attributes.name = label[0].toLowerCase() + label.substr(1).replace(/ +/g, '');
+      // TODO: use just ev-change?
+      // TODO: let user supply a channel instead
+      attributes['ev-event'] = hg.sendChange(d => attributes.value.set(d[attributes.name]));
+      attributes.value = attributes.value();
     }
 
-    if (!attributes.type)
-    {
-      attributes.type = 'input';
-    }
+    if (attributes.placeholder === true) attributes.placeholder = label;
 
-    return h('.mui-textfield', [h(controlTag, attributes), h('label', label)])
-  },
-  placeholderControl(label, controlTag, attributes)
-  {
-    if (controlTag && controlTag.type === "VirtualNode")
-    {
-      return h('.mui-textfield', [controlTag, h('label', label)]);
-    }
-
-    if (!attributes)
-    {
-      attributes = controlTag;
-      controlTag = 'input';
-    }
-
-    if (!attributes.name)
-    {
-      attributes.name = label[0].toLowerCase() + label.substr(1).replace(/ +/g, '');
-    }
-
-    if (!attributes.type)
-    {
-      attributes.type = 'input';
-    }
-
-    attributes.placeholder = label;
-
-    return h('.mui-textfield', h(controlTag, attributes))
-  },
+    return wrapField(label, h(tag, attributes), attributes.placeholder);
+  }
 };

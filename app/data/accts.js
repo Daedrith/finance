@@ -57,7 +57,7 @@ export default { // TODO: use individual exports
     };
 
     obs._id(setter(v => accts()[v]));
-    obs.name(setter(v => _.findWhere(accts(), v)));
+    obs.name(setter(name => _.findWhere(accts(), { name }) || { _id: null, _rev: null }));
 
     if (acct) obs.set(acct);
 

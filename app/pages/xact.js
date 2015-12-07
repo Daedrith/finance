@@ -66,7 +66,15 @@ export default {
       offsets,
       ready: toReadyObserv(doc.ready, accts.ready),
       channels: {
-        save(s, form) {
+        updateOffset(s, o)
+        {
+          let offset = s.offsets.get(o.index);
+          if (offset.acct.name() !== o.acct) offset.acct.name.set(o.acct);
+          if (offset.add() !== o.add) offset.add.set(o.add);
+          if (offset.sub() !== o.sub) offset.sub.set(o.sub);
+        },
+        save(s, form)
+        {
           // TODO: form cycle events
           let postDate = form.createDate
             ? localStringToDate(form.createDate)
@@ -92,7 +100,7 @@ export default {
               // replace option
             }
           }); // TODO: error handling
-        }
+        },
       }
     });
   }

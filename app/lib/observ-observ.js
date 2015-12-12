@@ -1,6 +1,6 @@
 import observ from 'observ';
 
-export default function(nestedObs)
+function MetaObserv(nestedObs)
 {
   if (typeof nestedObs !== 'function' || typeof nestedObs.set !== 'function')
   {
@@ -9,6 +9,7 @@ export default function(nestedObs)
 
   let obs = observ();
   let obsobs = observ();
+  obsobs[MetaObserv.isMetaObserv] = true;
 
   let dispose;
   let setObs = obsobs.set.bind(obsobs);
@@ -25,3 +26,7 @@ export default function(nestedObs)
 
   return { obs, obsobs };
 };
+
+MetaObserv.isMetaObserv = Symbol();
+
+export default MetaObserv;

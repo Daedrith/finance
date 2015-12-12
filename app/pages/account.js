@@ -1,7 +1,6 @@
 import hg from 'mercury';
 import render from './account.render';
 
-import dbq from '../querydb';
 import readyToObserv from '../lib/observ-ready';
 
 // TODO: module?
@@ -10,29 +9,28 @@ let epoch = +new Date(2015, 8, 12, 0, 0, 0);
 let genId = () => Math.floor((Date.now() - epoch) / 1000);
 
 export default {
-  init(params, opts)
+  init(params, opts, services)
   {
     let { state: oldState } = opts;
-    
+
     let doc = params.id != null
-      ? dbq.keyValue('acct-' + params.id, opts)
+      ? services.dbManager.keyValue('acct-' + params.id, opts)
       : null;
-    
-    let state = this.AccountForm(doc);
-    
+
+    let state = this.AccountForm(doc, services.appDb);
+
     if (oldState)
     {
       state.set(oldState);
     }
-    
+
     return state;
   },
   render: render,
   dispose(state)
   {
-    if (state.doc && state.doc.dispose) state.doc.dispose();
   },
-  AccountForm(doc)
+  AccountForm(doc, appDb)
   {
     doc = doc || hg.value({ name: '' });
     let title = hg.computed([doc], d => `Accounts > ${(d && d.name) || 'New'}`);
@@ -46,7 +44,7 @@ export default {
         save(s, form) {
           // TODO: form cycle events
           let doc = s.doc();
-          appdb.put({
+          appDb.put({
             _id: doc._id || `acct-${genId()}`,
             _rev: doc._rev,
             name: form.name

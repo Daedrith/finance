@@ -1,5 +1,3 @@
-'use strict';
-
 import _ from 'underscore';
 import hg from 'mercury'; // TOOD: import individual modules
 //import ObservArray from 'mercury/observ-array';
@@ -8,22 +6,33 @@ import hg from 'mercury'; // TOOD: import individual modules
 
 import createObservProp from './es5-observ';
 import utils from './utils';
+import MetaObserv from './observ-observ';
+let { isMetaObserv } = MetaObserv;
 
 let {log, trace} = utils;
 
 let { array: ObservArray, varhash: ObservVarhash, value: ObservValue } = hg;
 
-export default class
+let onChange = Symbol();
+
+class DbManager
 {
-  constructor(db)
+  constructor(db, opts = {})
   {
     this.db = db;
 
+    this.viewDefs = {};
+    this.viewResolver = opts.viewResolver || (n => System.import(`app/data/views${name}`));
+
+    // TODO: also take in state atom root; on change recursively walk it to find
+    // change handlers (private symbol attached to a state atom)
     this._changes = db.changes({ live: true, include_docs: true, since: 'now' });
     this.listenerCountObs = createObservProp(this, 'listenerCount', 0);
+
+    this.addChangeListener(c => this.broadcast(c, this.appState));
   }
 
-  onChanges(listener)
+  addChangeListener(listener)
   {
     this._changes.on('change', listener);
     this.listenerCount++;
@@ -33,6 +42,69 @@ export default class
   {
     this._changes.removeListener('change', listener);
     this.listenerCount--;
+  }
+
+  broadcast(c, root)
+  {
+    if (!root) return;
+
+    let type = root._type;
+    if (root[isMetaObserv])
+    {
+      this.broadcast(c, root());
+    }
+    else if (type === 'observ-array' || Array.isArray(root))
+    {
+      // TODO: define a local function and bind this once?
+      root.forEach(this.broadcast.bind(this, c));
+    }
+    else if (type === 'observ-struct')
+    {
+      let keys = _.without(Object.keys(root), ['set', '_diff', '_type', '_version']);
+      for (let key of keys) this.broadcast(c, root[key]);
+    }
+    else if (root.put && root.delete)
+    {
+      // varhash has to be duck-typed
+      let keys = Object.keys(root());
+      for (let key of keys) this.broadcast(c, root.get(key));
+    }
+    // TODO: ObservStruct2
+    // TODO: do we wakl normal objects/arrays?
+
+    for (let sym of Object.getOwnPropertySymbols(root))
+    {
+      // TODO: also walk down symbol props?
+      if (sym === onChange && typeof root[onChange] === 'function') root[onChange](c);
+    }
+  }
+
+  createIndex(name, map, reduce)
+  {
+    map = map.toString();
+    reduce = reduce && reduce.toString();
+    return this.db.put({
+      _id: "_design/" + name,
+      views: {
+        [name]: { map, reduce }
+      }
+    }).catch(e =>
+    {
+      if (e.status !== 409) log(e);
+    });
+  }
+
+  loadIndex(name)
+  {
+    if (this.viewDefs[name]) return Promise.resolve(this.viewDefs[name]);
+
+    let view;
+    return this.viewResolver(name).then(v =>
+    {
+      this.viewDefs[name] = v;
+      return this.createIndex(name, v.map, v.reduce)
+        .then(() => v);
+    });
   }
 
   keyArray(opts)
@@ -84,7 +156,8 @@ export default class
         };
 
         observ.ready.yet = true;
-        observ.dispose = this.onChanges(processChange);
+        observ[onChange] = processChange;
+        //observ.dispose = this.addChangeListener(processChange);
         return observ;
       });
 
@@ -128,29 +201,10 @@ export default class
         };
 
         obj.ready.yet = true;
+        obj[onChange] = processChange;
         // FIXME: if we try to call dispose be this continuation runs
-        obj.dispose = this.onChanges(processChange);
+        //obj.dispose = this.addChangeListener(processChange);
         return obj;
-      });
-
-    if (opts.startkey != null)
-    {
-      // TODO: account for inclusive_end
-      opts.filter = d => opts.startkey <= d._id < opts.endkey;
-    }
-
-    let changeQuery = Object.assign({
-      live: true,
-      include_docs: true,
-      since: 'now'
-    }, opts);
-
-    this.db
-      .changes(changeQuery)
-      .on('change', c =>
-      {
-        if (c.deleted) obj.del(c.id);
-        else obj.put(c.id, c.doc);
       });
 
     return obj;
@@ -160,6 +214,7 @@ export default class
   // TODO: custom hg.partial comparator based on _rev
   queryObject(view, opts)
   {
+    // TODO: loadIndex
     opts = opts || {};
 
     let hash = ObservVarhash({}, ObservValue);
@@ -213,6 +268,7 @@ export default class
         });
     };
 
+    // TODO: use [onChange]; will need to know view definition...
     let changeQuery = Object.assign(
       {
         live: true,
@@ -251,10 +307,9 @@ export default class
           val.set(c.deleted ? null : c.doc);
         };
 
-        val.dispose = this.onChanges(processChange);
-
+        val[onChange] = processChange;
+        //val.dispose = this.addChangeListener(processChange);
         val.ready.yet = true;
-
         return val;
       });
 
@@ -263,6 +318,7 @@ export default class
 
   queryValue(view, opts)
   {
+    // TODO: loadIndex
     opts = opts || {};
 
     let val = ObservValue(null);
@@ -278,6 +334,7 @@ export default class
 
     refresh();
 
+    // TODO: use [onChange]; need to know view definition
     changeQuery = {
       live: true,
       since: 'now',
@@ -290,4 +347,8 @@ export default class
 
     return val;
   }
-}
+};
+
+DbManager.prototype.onChange = onChange;
+
+export default DbManager;

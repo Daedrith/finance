@@ -3,7 +3,6 @@ import _ from 'underscore';
 import render from './xact.render';
 import Accts from '../data/accts';
 
-import dbq from '../querydb';
 import toReadyObserv from '../lib/observ-ready';
 
 // TODO: module?
@@ -11,20 +10,18 @@ let epoch = +new Date(2015, 8, 12, 0, 0, 0);
 // TODO: hybrid serial + random?
 let genId = () => Math.floor((Date.now() - epoch) / 1000);
 
-let db = dbq.db;
-
 export default {
-  init(params, opts)
+  init(params, opts, services)
   {
     let { state: oldState } = opts;
 
     let doc = params.id != null
-      ? dbq.keyValue('xact-' + params.id, opts)
+      ? services.dbManager.keyValue('xact-' + params.id, opts)
       : null;
 
-    let accts = Accts.getIdHash();
+    let accts = Accts.getIdHash(services.dbManager);
 
-    let state = this.XactForm(doc, accts);
+    let state = this.XactForm(doc, accts, services.appDb);
 
     if (oldState)
     {
@@ -34,25 +31,18 @@ export default {
     return state;
   },
   render: render,
-  dispose(state)
-  {
-    for (let disposable of [state.doc, state.accts])
-    {
-      if (disposable && disposable.dispose) disposable.dispose();
-    }
-  },
-  XactForm(doc, accts)
+  XactForm(doc, accts, db)
   {
     // TODO: extract a local copy to be bound to form?
     doc = doc || hg.value({ status: 'verified', offsets: [{}] });
 
     let blankOffset = {
-      acct: Accts.finder()
+      acct: Accts.finder(null, accts)
     };
 
     let offsets = hg.array(
       doc().offsets.map(o => hg.struct({
-        acct: Accts.finder(o.acct),
+        acct: Accts.finder(o.acct, accts),
         add: hg.value(o.add),
         sub: hg.value(o.sub),
       }))
@@ -81,7 +71,7 @@ export default {
             : new Date();
           let createDate = postDate;
           let doc = s.doc();
-          appdb.put({
+          db.put({
             _id: doc._id || 'xact-' + postDate.toISOString(),
             _rev: doc._rev,
             createDate: createDate.toISOString(),

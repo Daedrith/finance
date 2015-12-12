@@ -32,8 +32,8 @@ export default function(s)
     ]),
     s.offsets.map((o, index) => h('.mui-row', { 'ev-event': hg.sendChange(s.channels.updateOffset, { index })}, [
       h('.mui-col-md-8', c('Account', { name: 'acct', required, placeholder, attributes: { list: 'accts' }, value: o.acct.name })),
-      h('.mui-col-md-2', c('Add', { type: 'number', step: 0.01, required, placeholder, value: o.add })),
-      h('.mui-col-md-2', c('Sub', { type: 'number', step: 0.01, required, placeholder, value: o.sub })),
+      h('.mui-col-md-2', c('Add', { type: 'number', step: 0.01, placeholder, value: o.add })),
+      h('.mui-col-md-2', c('Sub', { type: 'number', step: 0.01, placeholder, value: o.sub })),
     ])),
     h('button.mui-btn.mui-btn--raised', d._id ? 'Update' : 'Create'),
 

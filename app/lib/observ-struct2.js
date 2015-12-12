@@ -38,7 +38,8 @@ export default function ObservStruct2(defaults)
     if (!timeoutId) timeoutId = setTimeout(() =>
     {
       timeoutId = null;
-      if (!publishedVal) publishedVal = Object.assign({}, val);
+      // maybe check for a clone method?
+      if (!publishedVal && listeners.length) publishedVal = Object.assign({}, val);
 
       for (let l of listeners) l(publishedVal);
     }, 0);

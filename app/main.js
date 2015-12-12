@@ -2,12 +2,11 @@
 import Router from 'mercury-router';
 import _ from 'underscore';
 import co from 'co';
+import PouchDB from 'pouchdb';
 
+import DbManager from './lib/db-manager';
 import obsobs from './lib/observ-observ';
 import {log} from './lib/utils';
-
-import appdb from './appdb';
-import dbq from './querydb';
 
 import renderMain from './main.render';
 
@@ -18,65 +17,34 @@ let {anchor} = Router;
 
 //export const __hotReload = true;
 
-// TODO: export to modules
-let queries = {
-  ledger(d)
-  {
-    if (d._id < 'xact-' || 'xact.' <= d._id) return;
+// PouchDB.debug.enable('*');
+let appDb = new PouchDB('finance');
+appDb.on('error', () => { debugger; });
 
-    if (d._deleted)
-    {
-      emit(null, d);
-      return;
-    }
+let dbManager = new DbManager(appDb);
 
-    let postDate = Number(d._id.slice(5));
-    for (let x of d.offsets)
-    {
-      emit([x.acct, postDate]);
-    }
-  },
-  acctSum(d)
-  {
-    if (d._id < 'xact-' || 'xact.' <= d._id) return;
+let services = { // go for something simple, for now
+  appDb,
+  dbManager,
+};
 
-    if (d._deleted)
-    {
-      emit(null, d);
-      return;
-    }
+Object.assign(window, services);
 
-    let postDate = Number(d._id.slice(5));
-    for (let x of d.offsets)
-    {
-      emit([x.acct, postDate], x.add != null ? x.add : -x.sub);
-    }
-  }
-}
-
-// initialize in QueryManager
-let indexPromises = [
-  appdb.createIndex('ledger', queries.ledger),
-  appdb.createIndex('acct-sum', queries.acctSum, '_sum')
-];
-
-Promise.all(indexPromises).then(() =>
-{
 // channels
-
 let channels = {
+  toggleSidedrawer(s) {
+    s.sidebarVisible.set(!s.sidebarVisible());
+  },
+  // debug
   docDel(s, d) {
-    appdb.remove(d).catch(log);
+    appDb.remove(d).catch(log);
   },
   toggleFullDump(s, d) {
     s.showDesignDocs.set(d['full-dump']);
   },
-  toggleSidedrawer(s) {
-    s.sidebarVisible.set(!s.sidebarVisible());
-  }
 };
 
-let ledger = dbq.queryObject('ledger', {
+let ledger = dbManager.queryObject('ledger', {
   startkey: ['acct-2884365']
   // TODO: reduction for running total; probably do a custom one client-side
 });
@@ -104,6 +72,7 @@ currentUrl(href =>
   navigate(href, { async: false, history: 'noop' });
 });
 
+// TODO: debounce?
 pageState(s =>
 {
   if (isNavigating) return;
@@ -112,6 +81,7 @@ pageState(s =>
   window.history.replaceState(s, s.title);
 });
 
+// TODO: module?
 let createCancellationToken = () =>
 {
   let resolve, reject;
@@ -158,7 +128,7 @@ let navigate = co.wrap(function*(url, opts)
   let { async } = opts;
 
   let page = route.fn;
-  let state = page.init(route.params, opts);
+  let state = page.init(route.params, opts, services);
 
   if (async && state.ready && !state.ready.yet)
   {
@@ -166,15 +136,19 @@ let navigate = co.wrap(function*(url, opts)
 
     if (ct.cancelled)
     {
-      page.dispose(state);
+      if (page.dispose) page.dispose(state); // TODO: remove?
       // TODO: avoid throwing an error?
       throw new Error('Navigation cancelled');
     }
   }
 
-  // dispose of the old state
+  // dispose of the old state (TODO: remove?)
   let oldUrl = navState.url();
-  if (oldUrl) getPage(oldUrl).dispose(navState.pageObs());
+  if (oldUrl)
+  {
+    let oldPage = getPage(oldUrl);
+    if (oldPage.dispose) oldPage.dispose(navState.pageObs());
+  }
 
   isNavigating = true;
 
@@ -219,10 +193,10 @@ function handleClick(e)
 }
 
 let appState = hg.state({
-  dumpState: dbq.keyArray(),
+  dumpState: dbManager.keyArray(),
   showDesignDocs: hg.value(false),
   ledger,
-  listenerCount: dbq.listenerCountObs,
+  listenerCount: dbManager.listenerCountObs,
 
   // not sure about putting something here that isn't serializable...
   // not to mention, mutable props; custom thunks?
@@ -230,16 +204,16 @@ let appState = hg.state({
   pageState,
   sidebarVisible: hg.value(true),
 
-  channels
+  channels,
 });
 
 window.appState = appState;
+
+dbManager.appState = appState;
 
 let stop = hg.app(
   document.body,
   appState,
   renderMain);
-
-}); // end index creation promise
 
 export let __hotreload = true;

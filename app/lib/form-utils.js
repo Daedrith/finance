@@ -1,5 +1,7 @@
 import hg from 'mercury';
 
+import ValidationHook from './validation-hook';
+
 let {h} = hg;
 
 let wrapField = (label, contents, hasPlaceholder) =>
@@ -9,33 +11,50 @@ let wrapField = (label, contents, hasPlaceholder) =>
 
 export default {
   wrapField,
-  control(label, tag, attributes)
+  control(label, tag, props)
   {
     if (tag && tag.type === "VirtualNode")
     {
-      return wrapField(label, tag, attributes);
+      return wrapField(label, tag, props);
     }
 
-    if (!attributes)
+    if (!props)
     {
-      attributes = tag;
+      props = tag;
       tag = 'input';
     }
 
-    if (!attributes.name) attributes.name = label[0].toLowerCase() + label.substr(1).replace(/ +/g, '');
+    if (!props.name) props.name = label[0].toLowerCase() + label.substr(1).replace(/ +/g, '');
 
-    if (!attributes.type) attributes.type = 'text';
+    if (!props.type) props.type = 'text';
 
-    if (typeof attributes.value === 'function' && attributes.value.set)
+    if (typeof props.value === 'function' && props.value.set)
     {
       // TODO: use just ev-change?
       // TODO: let user supply a channel instead
-      attributes['ev-event'] = hg.sendChange(d => attributes.value.set(d[attributes.name]));
-      attributes.value = attributes.value();
+      // TODO: or just delete this, because I doubt we'll ever pass an observable here
+      props['ev-event'] = hg.sendChange(d => props.value.set(d[props.name]));
+      props.value = props.value();
     }
 
-    if (attributes.placeholder === true) attributes.placeholder = label;
+    if (props.placeholder === true) props.placeholder = label;
 
-    return wrapField(label, h(tag, attributes), attributes.placeholder);
+    // TODO: list of props to move to attributes
+    if (typeof props.list === 'string')
+    {
+      let attrs = props.attributes || (props.attributes = {});
+      attrs.list = props.list;
+      delete props.list;
+    }
+
+    if (props.field)
+    {
+      let field = props.field;
+      delete props.field;
+      if (field.disabled != null) props.disabled = field.disabled;
+      if (field.error != null) props.customError = new ValidationHook(field.error);
+    }
+
+    return wrapField(label, h(tag, props), props.placeholder);
   }
 };

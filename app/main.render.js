@@ -97,6 +97,15 @@ function renderDebug(s)
   ]);
 }
 
+function renderNotifications(notifications)
+{
+  return h('.notifcation-container', notifications.map(n =>
+    h('.notification', { 'ev-click': n.channels.clicked }, [
+      h('.title', n.title),
+      h('.body', n.body),
+    ])));
+}
+
 export default (s) =>
 {
   // HACK: MUI looks for this class on the body tag, but our vtree doesn't include it
@@ -113,7 +122,7 @@ export default (s) =>
   }
 
   let chs = s.channels;
-  return h('div', [
+  return h('div', { style: { height: '100%' } }, [
     hg.partial(renderNav),
     hg.partial(renderAppbar, s.pageState.title, chs),
     h('#content-wrapper', [

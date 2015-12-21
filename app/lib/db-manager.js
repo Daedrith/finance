@@ -90,7 +90,7 @@ class DbManager
       }
     }).catch(e =>
     {
-      if (e.status !== 409) log(e);
+      if (e.status !== 409) log(e); // TODO: rethrow?
     });
   }
 

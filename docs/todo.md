@@ -4,13 +4,9 @@ Version 1
 Short/medium-term plans
 -----------------------
 
-- modularize CSS, get rid of rest of compiled code
-- doc edit mode (hidden _id, _rev fields?)
-  - kinda need to do routing
-- CSS framework
-  - Bootcards?
+- notification system
 - implement simple account ledger view
-  - tackle routing first? maybe flesh out UI more
+- account hierarchy
 - flesh out form cycle:
   - saving state: lock down, wait indicator
   - error feedback (async): unlock
@@ -22,29 +18,6 @@ Short/medium-term plans
 Framework
 ---------
 
-- Hot reload: remove imperative code from top-level / main module, or do some custom __hotReload logic
-- Rework data layer:
-  - Views (of the map/reduce kind)
-    - Put view definitions in their own modules
-    - Maybe have some kind of background process to add them eagerly?
-      - Should be unnecessary, 99% of the time they haven't changed and are already there
-      - Should detect if view definition differs from what's in the design doc
-    - Pass the view into the query observ factories
-      - If view not initialized yet, that will be kicked off then
-      - We still return the value synchronously, it will be empty until view is populated
-        - Maybe figure out some kind of side-channel for status?
-  - Manager class
-    - Doesn't feel very functional / FRP
-    - Rewrite other observable adapters to latest convention
-    - Querying API?
-  - Future: rewind/fast-forward
-- CSS framework
-  - bootstrap cards? MUI?
-  - think about overall UI (cards are attractive; perhaps even avoid modal UIs? interesting conflict resolution)
-- Turn label helper function into labelled control component?
-  - Might be a first easy step into components
-
-- tagged template function for creating vdom nodes... jade-like syntax?
 - form generation?
   - form component for better composition?
   - validation
@@ -56,13 +29,10 @@ Views
 
 - top level view
   - navigation, notifications, etc.
-- acct add/edit
-  - use the same channel (_id/_rev in hidden field?)
 - general ledger
 - acct list/hierarchy
 - acct ledger
   - acct+subs ledger
-  -
 - xact add/edit?
 
 Channels
@@ -77,6 +47,11 @@ Optimization
 - figure out where I use plain values or obesrv-values
 - thunks
 
+Misc
+----
+
+- modularize CSS
+
 Version 2
 =========
 
@@ -90,3 +65,6 @@ Wishlist
 
 - Signal graph visualizer for observables
 - Type annotations?
+- Hot reload: remove imperative code from top-level / main module, or do some custom `__hotReload` logic
+- Future: rewind/fast-forward? (enough to do from DB side?)
+- tagged template function for creating vdom nodes... jade-like syntax?

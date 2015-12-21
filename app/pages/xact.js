@@ -3,6 +3,7 @@ import _ from 'underscore';
 import render from './xact.render';
 import Accts from '../data/accts';
 
+import ObservStruct2 from '../lib/observ-struct2';
 import toReadyObserv from '../lib/observ-ready';
 
 // TODO: module?
@@ -33,20 +34,26 @@ export default {
   render: render,
   XactForm(doc, accts, db)
   {
+    // TODO: module; and perhaps consider holding value as well?
+    let fieldState = () => ObservStruct2({ error: '', disabled: false });
+
+    let offsetKey = 0;
+    let createOffset = (o) => hg.struct({
+      key: offsetKey++,
+      acct: Accts.finder(o && o.acct, accts),
+      add: hg.value(o && o.add),
+      sub: hg.value(o && o.sub),
+      acctField: fieldState(),
+      addField: fieldState(),
+      subField: fieldState(),
+    });
+
     // TODO: extract a local copy to be bound to form?
-    doc = doc || hg.value({ status: 'verified', offsets: [{}] });
+    doc = doc || hg.value({ status: 'verified', offsets: [null] });
 
-    let blankOffset = {
-      acct: Accts.finder(null, accts)
-    };
-
+    // TODO: defer until doc.ready
     let offsets = hg.array(
-      doc().offsets.map(o => hg.struct({
-        acct: Accts.finder(o.acct, accts),
-        add: hg.value(o.add),
-        sub: hg.value(o.sub),
-      }))
-      .concat([hg.struct(blankOffset)]));
+      doc().offsets.map(createOffset).concat([createOffset()]));
 
     let title = hg.computed([doc], d => `Transactions > ${(d && d._id) || 'New'}`);
     return hg.state({
@@ -56,15 +63,55 @@ export default {
       offsets,
       ready: toReadyObserv(doc.ready, accts.ready),
       channels: {
-        updateOffset(s, o)
+        updateOffset(s, form)
         {
-          let offset = s.offsets.get(o.index);
-          if (offset.acct.name() !== o.acct) offset.acct.name.set(o.acct);
-          if (offset.add() !== o.add) offset.add.set(o.add);
-          if (offset.sub() !== o.sub) offset.sub.set(o.sub);
+          let offset = s.offsets.get(form.index);
+          if (offset.acct.name() !== form.acct) offset.acct.name.set(form.acct);
+          if (+offset.add() !== +form.add) offset.add.set(+form.add);
+          if (+offset.sub() !== +form.sub) offset.sub.set(+form.sub);
+
+          // shouldn't happen, but just in case
+          if (offset.add() && offset.sub())
+          {
+            offset.addField.set({ error: 'Cannot have both add and sub', disabled: false });
+            offset.subField.set({ error: 'Cannot have both add and sub', disabled: false });
+          }
+          else if (offset.add() || offset.sub())
+          {
+            (offset.add() ? offset.subField : offset.addField).disabled.set(true);
+          }
+          else
+          {
+            offset.addField.disabled.set(false);
+            offset.subField.disabled.set(false);
+          }
+
+          // TODO: disable add/sub if the other is populated?
+          // TODO: if other offset doesn't have add/sub, mirror this one in the other?
+
+          // add new record if last isn't blank
+          let lastOffset = s.offsets.get(s.offsets.getLength() - 1);
+          if (lastOffset().acct._id)
+          {
+            s.offsets.push(createOffset());
+          }
+
+          if (s.offsets.getLength() < 3) return;
+
+          let lastIndex = s.offsets.getLength() - 1;
+
+          // remove excess (completely) blank records
+          // TODO: animate; generate a unique ID on offset and render as key
+          let newArr = s.offsets.filter((o, i) => o.acct.name() || o.add() || o.sub() || i === lastIndex);
+
+          if (s.offsets.getLength() != newArr.getLength())
+          {
+            s.offsets.set(newArr._list); // arrgh.. HACK!
+          }
         },
         save(s, form)
         {
+          // TODO: validation
           // TODO: form cycle events
           let postDate = form.createDate
             ? localStringToDate(form.createDate)

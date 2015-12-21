@@ -23,7 +23,9 @@ appDb.on('error', () => { debugger; });
 
 let dbManager = new DbManager(appDb);
 
-let services = { // go for something simple, for now
+// the mercury Component pattern seems to advocate emitting events, like a decoupled RPC mechanism;
+// for now, I'll go for something simple
+let services = {
   appDb,
   dbManager,
 };
@@ -192,6 +194,10 @@ function handleClick(e)
   navigate(a.href);
 }
 
+let notifications = hg.array([
+
+]);
+
 let appState = hg.state({
   dumpState: dbManager.keyArray(),
   showDesignDocs: hg.value(false),
@@ -203,6 +209,7 @@ let appState = hg.state({
   navState,
   pageState,
   sidebarVisible: hg.value(true),
+  notifications,
 
   channels,
 });

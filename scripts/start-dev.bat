@@ -3,7 +3,7 @@ cd /d %~dp0\..
 
 :: call :run Compiler cmd /c watchy -w app -- scripts\compile.bat
 
-call :run LiveReloadX /min cmd /c livereloadx -s . -p 8080 --exclude "{jspm,node}_packages/"
+call :run LiveReloadX /min cmd /c livereloadx -s . -p 8080 --exclude "jspm_packages/" --exclude "node_modules/"
 
 ::call :run Server /min cmd /c scripts\server.bat
 

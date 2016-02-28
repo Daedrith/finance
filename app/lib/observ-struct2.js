@@ -2,62 +2,119 @@ import ObservProp from './observ-prop.js';
 
 let transaction = Symbol('startTransaction');
 
+// TODO: rename to... Aobservable? Abservable? Aobserv?
+// top-level function that pattern-matches and defers to sub functions?
 function ObservStruct2(defaults)
 {
   let publishedVal;
+  let createVal = () =>
+  {
+    publishedVal = Object.assign({}, val);
+    for (let pullProp of pullProps) publishedVal[pullProp] = defaults[pullProp]();
+
+    // make freeze optional?
+    Object.freeze(publishedVal);
+    return publishedVal;
+  };
+
   let listeners = [];
+  let lazyListeners = [];
   let obs = l =>
   {
     if (!l)
     {
-      return publishedVal || (publishedVal = Object.assign({}, val));
+      return publishedVal || createVal();
     }
-
-    listeners.push(l);
-    return () => listeners.splice(listeners.indexOf(l), 1);
+    else if (l.length === 0)
+    {
+      lazyListeners.push(l);
+      return () => lazyListeners.splice(lazyListeners.indexOf(l), 1);
+    }
+    else
+    {
+      listeners.push(l);
+      return () => listeners.splice(listeners.indexOf(l), 1);
+    }
   };
 
-  Object.defineProperty(obs, 'name', { writable: true });
-  Object.defineProperty(obs, 'length', { writable: true });
-
+  // TODO: store as private symbols, expose as "static" methods?
+  let pullProps = []; // list of props to pull from observable in defaults
   let inTransaction = false;
-
   let publish = () =>
   {
-    if (inTransaction) return;
+    if (listeners.length > 0)
+    {
+      // maybe check for a clone method?
+      if (!publishedVal && listeners.length) createVal();
 
-    // maybe check for a clone method?
-    if (!publishedVal && listeners.length) publishedVal = Object.assign({}, val);
+      for (let l of listeners) l(publishedVal);
+    }
 
-    for (let l of listeners) l(publishedVal);
+    for (let l of lazyListeners) l();
   };
 
-  // TODO: counter or exception for nested transactions; auto-close timeout
-  obs.transaction = () =>
+  obs.transaction = (cb) =>
   {
+    // TODO: counter or exception for nested transactions
     inTransaction = true;
-    return () =>
+    // TODO: deprecate this style of transaction
+    if (!cb)
+    {
+      return () =>
+      {
+        inTransaction = false;
+        if (!publishedVal) publish();
+      };
+    }
+
+    try
+    {
+      cb();
+    }
+    finally
     {
       inTransaction = false;
-      publish();
-    };
+      if (!publishedVal) publish();
+    }
   };
+  // TODO: "static" method instead?
   obs[transaction] = obs.transaction; // in case user needs this key name
 
   // Create properties on obs that hold the observable for each property in the struct
-  let val = Object.assign({}, defaults); // mutated by each ObservProp
+  let val = {}; // mutated by each ObservProp
   let keys = Object.keys(defaults);
   for (let key of keys)
   {
-    // TODO: if defaults[key] is an observable, chain observProp to it
-    let prop = obs[key] = ObservProp(val, key);
-    prop(v =>
+    // TODO: wrappers to modify behavior?
+    let prop;
+    if (typeof defaults[key] === 'function')
+    {
+      prop = defaults[key];
+      pullProps.push(key);
+    }
+    else
+    {
+      prop = ObservProp(val, key);
+    }
+
+    prop(() =>
     {
       // when a property's value changes, schedule a publish to listeners of the struct
       publishedVal = null;
-      publish();
+      if (!inTransaction) publish();
+    });
+
+    if (key === 'name' || key === 'length') delete obs[key];
+    Object.defineProperty(obs, key, {
+      value: prop,
+      configurable: true,
+      enumerable: true,
+      writable: false,
     });
   }
+
+  // make sure we have an immutable copy (TODO: shuold really just copy the pullprops)
+  if (pullProps.length) defaults = Object.assign({}, defaults);
 
   obs.set = v =>
   {

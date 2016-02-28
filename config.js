@@ -349,12 +349,12 @@ System.config({
   },
 
   map: {
-    "babel": "npm:babel-core@5.8.34",
-    "babel-runtime": "npm:babel-runtime@5.8.34",
+    "babel": "npm:babel-core@5.8.35",
+    "babel-runtime": "npm:babel-runtime@5.8.35",
     "co": "npm:co@4.6.0",
     "core-js": "npm:core-js@1.2.6",
-    "mercury": "npm:mercury@14.0.0",
-    "mercury-router": "npm:mercury-router@1.0.9",
+    "mercury": "npm:mercury@14.1.0",
+    "mercury-router": "npm:mercury-router@1.1.0",
     "observ": "npm:observ@0.2.0",
     "pouchdb": "//cdn.jsdelivr.net/pouchdb/5.0.0/pouchdb.js",
     "route-map": "npm:route-map@0.1.0",
@@ -363,7 +363,7 @@ System.config({
       "assert": "npm:assert@1.3.0"
     },
     "github:jspm/nodelibs-buffer@0.1.0": {
-      "buffer": "npm:buffer@3.5.2"
+      "buffer": "npm:buffer@3.6.0"
     },
     "github:jspm/nodelibs-console@0.1.0": {
       "console-browserify": "npm:console-browserify@1.1.0"
@@ -394,8 +394,11 @@ System.config({
     "github:jspm/nodelibs-stream@0.1.0": {
       "stream-browserify": "npm:stream-browserify@1.0.0"
     },
+    "github:jspm/nodelibs-string_decoder@0.1.0": {
+      "string_decoder": "npm:string_decoder@0.10.31"
+    },
     "github:jspm/nodelibs-timers@0.1.0": {
-      "timers-browserify": "npm:timers-browserify@1.4.1"
+      "timers-browserify": "npm:timers-browserify@1.4.2"
     },
     "github:jspm/nodelibs-url@0.1.0": {
       "url": "npm:url@0.10.3"
@@ -406,21 +409,29 @@ System.config({
     "npm:assert@1.3.0": {
       "util": "npm:util@0.10.3"
     },
-    "npm:babel-runtime@5.8.34": {
+    "npm:babel-runtime@5.8.35": {
       "process": "github:jspm/nodelibs-process@0.1.2"
     },
-    "npm:buffer@3.5.2": {
+    "npm:body@0.1.0": {
+      "content-types": "npm:content-types@0.1.0",
+      "querystring": "github:jspm/nodelibs-querystring@0.1.0",
+      "string_decoder": "github:jspm/nodelibs-string_decoder@0.1.0"
+    },
+    "npm:buffer@3.6.0": {
       "base64-js": "npm:base64-js@0.0.8",
       "child_process": "github:jspm/nodelibs-child_process@0.1.0",
       "fs": "github:jspm/nodelibs-fs@0.1.2",
       "ieee754": "npm:ieee754@1.1.6",
-      "is-array": "npm:is-array@1.0.1",
+      "isarray": "npm:isarray@1.0.0",
       "process": "github:jspm/nodelibs-process@0.1.2"
     },
     "npm:console-browserify@1.1.0": {
       "assert": "github:jspm/nodelibs-assert@0.1.0",
       "date-now": "npm:date-now@0.1.4",
       "util": "github:jspm/nodelibs-util@0.1.0"
+    },
+    "npm:content-types@0.1.0": {
+      "iterators": "npm:iterators@0.1.0"
     },
     "npm:core-js@1.2.6": {
       "fs": "github:jspm/nodelibs-fs@0.1.2",
@@ -453,6 +464,13 @@ System.config({
       "string-template": "npm:string-template@0.2.1",
       "xtend": "npm:xtend@4.0.1"
     },
+    "npm:error@5.2.0": {
+      "assert": "github:jspm/nodelibs-assert@0.1.0",
+      "camelize": "npm:camelize@1.0.0",
+      "is-error": "npm:is-error@2.2.0",
+      "string-template": "npm:string-template@0.2.1",
+      "xtend": "npm:xtend@4.0.1"
+    },
     "npm:ev-store@7.0.0": {
       "individual": "npm:individual@3.0.0"
     },
@@ -463,40 +481,53 @@ System.config({
     "npm:global@4.3.0": {
       "process": "npm:process@0.5.2"
     },
+    "npm:http-hash-router@1.1.0": {
+      "error": "npm:error@5.2.0",
+      "http-hash": "npm:http-hash@1.1.1",
+      "http-methods": "npm:http-methods@1.0.0",
+      "url": "github:jspm/nodelibs-url@0.1.0",
+      "xtend": "npm:xtend@4.0.1"
+    },
+    "npm:http-methods@1.0.0": {
+      "body": "npm:body@0.1.0",
+      "content-types": "npm:content-types@0.1.0"
+    },
     "npm:inherits@2.0.1": {
       "util": "github:jspm/nodelibs-util@0.1.0"
+    },
+    "npm:iterators@0.1.0": {
+      "ap": "npm:ap@0.1.0"
     },
     "npm:main-loop@3.2.0": {
       "error": "npm:error@4.4.0",
       "raf": "npm:raf@2.0.4"
     },
-    "npm:mercury-router@1.0.9": {
+    "npm:mercury-router@1.1.0": {
       "geval": "npm:geval@2.1.1",
       "global": "npm:global@4.3.0",
       "observ": "npm:observ@0.2.0",
       "route-map": "npm:route-map@0.1.0",
       "virtual-dom": "npm:virtual-dom@1.3.0"
     },
-    "npm:mercury@14.0.0": {
-      "child_process": "github:jspm/nodelibs-child_process@0.1.0",
+    "npm:mercury@14.1.0": {
       "console": "github:jspm/nodelibs-console@0.1.0",
       "dom-delegator": "npm:dom-delegator@13.1.0",
       "fs": "github:jspm/nodelibs-fs@0.1.2",
       "geval": "npm:geval@2.1.1",
       "http": "github:jspm/nodelibs-http@1.7.1",
+      "http-hash-router": "npm:http-hash-router@1.1.0",
       "main-loop": "npm:main-loop@3.2.0",
       "observ": "npm:observ@0.2.0",
       "observ-array": "npm:observ-array@3.2.1",
       "observ-struct": "npm:observ-struct@5.0.1",
-      "observ-varhash": "npm:observ-varhash@1.0.6",
-      "os": "github:jspm/nodelibs-os@0.1.0",
+      "observ-varhash": "npm:observ-varhash@1.0.8",
       "path": "github:jspm/nodelibs-path@0.1.0",
       "process": "github:jspm/nodelibs-process@0.1.2",
       "systemjs-json": "github:systemjs/plugin-json@0.1.0",
       "timers": "github:jspm/nodelibs-timers@0.1.0",
       "value-event": "npm:value-event@5.1.0",
       "vdom-thunk": "npm:vdom-thunk@3.0.0",
-      "virtual-dom": "npm:virtual-dom@1.3.0",
+      "virtual-dom": "npm:virtual-dom@2.1.1",
       "xtend": "npm:xtend@4.0.1"
     },
     "npm:next-tick@0.2.2": {
@@ -515,7 +546,7 @@ System.config({
       "observ": "npm:observ@0.2.0",
       "xtend": "npm:xtend@3.0.0"
     },
-    "npm:observ-varhash@1.0.6": {
+    "npm:observ-varhash@1.0.8": {
       "observ": "npm:observ@0.2.0",
       "process": "github:jspm/nodelibs-process@0.1.2",
       "xtend": "npm:xtend@3.0.0"
@@ -561,7 +592,7 @@ System.config({
     "npm:string_decoder@0.10.31": {
       "buffer": "github:jspm/nodelibs-buffer@0.1.0"
     },
-    "npm:timers-browserify@1.4.1": {
+    "npm:timers-browserify@1.4.2": {
       "process": "npm:process@0.11.2"
     },
     "npm:url@0.10.3": {
@@ -582,6 +613,16 @@ System.config({
       "xtend": "npm:xtend@2.2.0"
     },
     "npm:virtual-dom@1.3.0": {
+      "browser-split": "npm:browser-split@0.0.1",
+      "error": "npm:error@4.4.0",
+      "ev-store": "npm:ev-store@7.0.0",
+      "global": "npm:global@4.3.0",
+      "is-object": "npm:is-object@1.0.1",
+      "next-tick": "npm:next-tick@0.2.2",
+      "x-is-array": "npm:x-is-array@0.1.0",
+      "x-is-string": "npm:x-is-string@0.1.0"
+    },
+    "npm:virtual-dom@2.1.1": {
       "browser-split": "npm:browser-split@0.0.1",
       "error": "npm:error@4.4.0",
       "ev-store": "npm:ev-store@7.0.0",

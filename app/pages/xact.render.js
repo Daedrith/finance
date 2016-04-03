@@ -20,7 +20,7 @@ export default function(s)
   let d = s.doc;
 
   return h('form.mui-panel.mui-form--inline', { 'ev-submit': hg.sendSubmit(s.channels.save) }, [ // TODO: figure out multiple element situation
-    h('legend', 'Create transaction'),
+    h('legend', (d._id ? 'Edit' : 'New') + ' transaction'),
     c('Create Date', { type: 'datetime-local', style: { 'padding-top': '15px' } }), ' ',
     c('Status', h('.mui-select', h('select', { name: 'status', value: d.status },
       'verified'.split(' ').map(v => h('option', { value: v }, v))
@@ -31,7 +31,7 @@ export default function(s)
       h('.mui-col-md-2', 'Sub'),
     ]),
     s.offsets.map((o, index) => h('.mui-row', { key: o.key, 'ev-event': hg.sendChange(s.channels.updateOffset, { index }) }, [
-      h('.mui-col-md-8', c('Account', { name: 'acct', required, placeholder, list: 'accts', value: o.acct.name, field: o.acctField })),
+      h('.mui-col-md-8', c('Account', { name: 'acct', placeholder, list: 'accts', value: o.acct.name, field: o.acctField })),
       h('.mui-col-md-2', c('Add', { type: 'number', step: 0.01, placeholder, value: o.add, field: o.addField })),
       h('.mui-col-md-2', c('Sub', { type: 'number', step: 0.01, placeholder, value: o.sub, field: o.subField })),
     ])),

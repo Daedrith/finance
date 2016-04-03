@@ -1,5 +1,5 @@
 import hg from 'mercury';
-import _ from 'underscore';
+import _ from 'lodash';
 import render from './xact.render';
 import Accts from '../data/accts';
 
@@ -70,7 +70,7 @@ export default {
           if (+offset.add() !== +form.add) offset.add.set(+form.add);
           if (+offset.sub() !== +form.sub) offset.sub.set(+form.sub);
 
-          // shouldn't happen, but just in case
+          // TODO: validation based on computed funcs
           if (offset.add() && offset.sub())
           {
             offset.addField.set({ error: 'Cannot have both add and sub', disabled: false });
@@ -78,21 +78,24 @@ export default {
           }
           else if (offset.add() || offset.sub())
           {
-            (offset.add() ? offset.subField : offset.addField).disabled.set(true);
+            let isAdd = !!offset.add();
+            offset.addField.set({ error: '', disabled: !isAdd });
+            offset.subField.set({ error: '', disabled: isAdd });
           }
           else
           {
-            offset.addField.disabled.set(false);
-            offset.subField.disabled.set(false);
+            offset.addField.set({ error: '', disabled: false });
+            offset.subField.set({ error: '', disabled: false });
           }
-
-          // TODO: disable add/sub if the other is populated?
-          // TODO: if other offset doesn't have add/sub, mirror this one in the other?
 
           // add new record if last isn't blank
           let lastOffset = s.offsets.get(s.offsets.getLength() - 1);
           if (lastOffset().acct._id)
           {
+            let bal = s.offsets.reduce((bal, o) => bal + (o.add() || -o.sub()), 0);
+            if (bal > 0) lastOffset.sub.set(bal);
+            else if (bal < 0) lastOffset.add.set(-bal);
+
             s.offsets.push(createOffset());
           }
 
@@ -112,6 +115,17 @@ export default {
         save(s, form)
         {
           // TODO: validation
+          let bal = s.offsets.reduce((bal, o) => bal + (o.add() || -o.sub()), 0);
+          if (bal !== 0)
+          {
+            s.offsets.forEach(o =>
+            {
+              if (o.add()) o.addField.error.set('Offsets must be balanced');
+              else if (o.sub()) o.subField.error.set('Offsets must be balanced');
+            });
+            return;
+          }
+
           // TODO: form cycle events
           let postDate = form.createDate
             ? localStringToDate(form.createDate)
@@ -123,12 +137,14 @@ export default {
             _rev: doc._rev,
             createDate: createDate.toISOString(),
             status: form.status,
-            offsets: [
-              { acct: _.findWhere(s.accts(), { name: form.from })._id,
-                sub: 100 * form.amt },
-              { acct: _.findWhere(s.accts(), { name: form.to })._id,
-                add: 100 * form.amt }
-            ]
+            offsets: _(offsets()).filter('acct._id').map(o =>
+            {
+              let ret = { acct: o.acct._id };
+              if (o.add) ret.add = o.add * 100;
+              else ret.sub = o.sub * 100;
+
+              return ret;
+            }).value(),
           }).then(res =>
           {
             if (!doc._id)

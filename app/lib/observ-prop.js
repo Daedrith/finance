@@ -11,9 +11,11 @@ export default function ObservProp(obj, name)
 
   obs.set = v =>
   {
+    if (obj[name] === v) return;
+    
     obj[name] = v;
     for (let l of listeners) l(v);
   };
-  
+
   return obs;
 };

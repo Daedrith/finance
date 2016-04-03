@@ -353,6 +353,7 @@ System.config({
     "babel-runtime": "npm:babel-runtime@5.8.35",
     "co": "npm:co@4.6.0",
     "core-js": "npm:core-js@1.2.6",
+    "lodash": "npm:lodash@4.5.1",
     "mercury": "npm:mercury@14.1.0",
     "mercury-router": "npm:mercury-router@1.1.0",
     "observ": "npm:observ@0.2.0",
@@ -497,6 +498,10 @@ System.config({
     },
     "npm:iterators@0.1.0": {
       "ap": "npm:ap@0.1.0"
+    },
+    "npm:lodash@4.5.1": {
+      "buffer": "github:jspm/nodelibs-buffer@0.1.0",
+      "process": "github:jspm/nodelibs-process@0.1.2"
     },
     "npm:main-loop@3.2.0": {
       "error": "npm:error@4.4.0",

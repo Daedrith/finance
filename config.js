@@ -353,6 +353,7 @@ System.config({
     "babel-runtime": "npm:babel-runtime@5.8.35",
     "co": "npm:co@4.6.0",
     "core-js": "npm:core-js@1.2.6",
+    "hyperscript-helpers": "npm:hyperscript-helpers@3.0.1",
     "lodash": "npm:lodash@4.5.1",
     "mercury": "npm:mercury@14.1.0",
     "mercury-router": "npm:mercury-router@1.1.0",

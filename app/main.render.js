@@ -39,8 +39,7 @@ function renderNav()
       h('li', [
         h('strong', 'Accounts'),
         h('ul', [
-          h('li', a('New Account', '#/accounts')),
-          h('li', a('Edit Account', '#/accounts/6192115'))
+          h('li', a('Account List', '#/accounts')),
         ])
       ]),
       h('li', [
@@ -88,7 +87,10 @@ function renderDebug(s)
                 h('span.del', { 'ev-click': hg.send(chs.docDel, d) })
               ]))
         ])
-      )
+      ),
+      h('h3', 'Ledger dump'),
+      h('.mui-panel',
+        h('pre', JSON.stringify(s.ledger, null, 2)))
     ]),
     h('.mui-col-md-6', [
       h('h3', 'Page state dump'),

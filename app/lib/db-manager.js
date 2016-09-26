@@ -22,7 +22,7 @@ class DbManager
     this.db = db;
 
     this.viewDefs = {};
-    this.viewResolver = opts.viewResolver || (n => System.import(`app/data/views${name}`));
+    this.viewResolver = opts.viewResolver || (name => System.import(`app/data/views/${name}`));
 
     // TODO: also take in state atom root; on change recursively walk it to find
     // change handlers (private symbol attached to a state atom)
@@ -91,6 +91,7 @@ class DbManager
     }).catch(e =>
     {
       if (e.status !== 409) log(e); // TODO: rethrow?
+      // TODO: delete and recreate if different
     });
   }
 
@@ -101,6 +102,7 @@ class DbManager
     let view;
     return this.viewResolver(name).then(v =>
     {
+      v = v.default || v;
       this.viewDefs[name] = v;
       return this.createIndex(name, v.map, v.reduce)
         .then(() => v);
@@ -214,7 +216,6 @@ class DbManager
   // TODO: custom hg.partial comparator based on _rev
   queryObject(view, opts)
   {
-    // TODO: loadIndex
     opts = opts || {};
 
     let hash = ObservVarhash({}, ObservValue);
@@ -239,33 +240,34 @@ class DbManager
 
     let refresh = () =>
     {
-      this.db
-        .query(view, viewQuery)
-        .catch(log)
-        .then(res =>
-        {
-          let old = hash();
-          let oldkeys = Object.keys(old);
-          let n = _.indexBy(res.rows, r => r.key);
-          let newkeys = Object.keys(n);
-          // TODO: better way compute these three sets?
-          // if my output was array-based, I could do a "merge join"-like strategy
-          for (let k of _.difference(newkeys, oldkeys))
+      this.loadIndex(view).then(viewDef =>
+        this.db
+          .query(view, viewQuery)
+          .catch(log)
+          .then(res =>
           {
-            hash.put(k, n[k].doc);
-          }
-          for (let k of _.difference(oldkeys, newkeys))
-          {
-            hash.delete(k);
-          }
-          for (k of _.intersection(oldkeys, newkeys))
-          {
-            if (old[k]._rev !== n[k].doc._rev)
+            let old = hash();
+            let oldkeys = Object.keys(old);
+            let n = _.indexBy(res.rows, r => r.key);
+            let newkeys = Object.keys(n);
+            // TODO: better way compute these three sets?
+            // if my output was array-based, I could do a "merge join"-like strategy
+            for (let k of _.difference(newkeys, oldkeys))
             {
               hash.put(k, n[k].doc);
             }
-          }
-        });
+            for (let k of _.difference(oldkeys, newkeys))
+            {
+              hash.delete(k);
+            }
+            for (k of _.intersection(oldkeys, newkeys))
+            {
+              if (old[k]._rev !== n[k].doc._rev)
+              {
+                hash.put(k, n[k].doc);
+              }
+            }
+          }));
     };
 
     // TODO: use [onChange]; will need to know view definition...
@@ -318,7 +320,6 @@ class DbManager
 
   queryValue(view, opts)
   {
-    // TODO: loadIndex
     opts = opts || {};
 
     let val = ObservValue(null);
@@ -326,10 +327,11 @@ class DbManager
     // TODO: serialize?
     let refresh = () =>
     {
-      this.db
-        .query(view, opts)
-        .catch(log)
-        .then(res => val.set(res.rows[0].value));
+      this.loadIndex(view).then(viewDef =>
+        this.db
+          .query(view, opts)
+          .catch(log)
+          .then(res => val.set(res.rows[0].value)));
     };
 
     refresh();

@@ -13,6 +13,7 @@
   "jspm": {
     "dependencies": {
       "co": "npm:co@^4.6.0",
+      "hyperscript-helpers": "npm:hyperscript-helpers@^3.0.1",
       "lodash": "npm:lodash@^4.5.1",
       "mercury": "npm:mercury@^14.0.0",
       "mercury-router": "npm:mercury-router@^1.0.9",

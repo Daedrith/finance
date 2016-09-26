@@ -47,7 +47,7 @@ let channels = {
 };
 
 let ledger = dbManager.queryObject('ledger', {
-  startkey: ['acct-2884365']
+  startkey: ['acct-32104241']
   // TODO: reduction for running total; probably do a custom one client-side
 });
 //let bal = queryValue('acct-sum', {

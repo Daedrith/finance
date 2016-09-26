@@ -1,5 +1,10 @@
 import hg from 'mercury';
+import hh from 'hyperscript-helpers';
+import muihh from '../lib/mui-hyperscript-helpers';
+
 let {h} = hg;
+let { h1, table, thead, tbody, tr, td, th, div } = hh(h);
+let { panel } = muihh(h);
 
 // TODO: module
 let lbl = (n, c, a) => h('.mui-textfield', [h(c, a), h('label', n)]);
@@ -16,9 +21,18 @@ export default function(s)
 
   let d = s.doc;
 
-  return h('form.mui-panel', { 'ev-submit': hg.sendSubmit(s.channels.save) }, [
-    h('legend', (d._id ? 'Update' : 'Create') + ' Account'),
-    lbl('Name', 'input', { name: 'name', required, value: d.name }),
-    h('button.mui-btn.mui-btn--raised', d._id ? 'Update' : 'Create')
+  return div([
+    h1('Account List'),
+    panel(table('.mui-table', [
+      thead([
+        tr([
+          th('Account Name'),
+          th('Balance'),
+        ])
+      ]),
+      tbody([
+
+      ]),
+    ])),
   ]);
 };

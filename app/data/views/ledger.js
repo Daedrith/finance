@@ -9,7 +9,9 @@ export default {
       return;
     }
 
-    let postDate = Number(d._id.slice(5));
+    console.log(d);
+
+    let postDate = d._id.slice(5);
     for (let x of d.offsets)
     {
       emit([x.acct, postDate]);

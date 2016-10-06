@@ -88,9 +88,9 @@ function renderDebug(s)
               ]))
         ])
       ),
-      h('h3', 'Ledger dump'),
-      h('.mui-panel',
-        h('pre', JSON.stringify(s.ledger, null, 2)))
+      //h('h3', 'Ledger dump'),
+      //h('.mui-panel',
+      //  h('pre', JSON.stringify(s.ledger, null, 2)))
     ]),
     h('.mui-col-md-6', [
       h('h3', 'Page state dump'),

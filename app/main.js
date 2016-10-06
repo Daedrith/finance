@@ -19,7 +19,7 @@ let {anchor} = Router;
 
 // PouchDB.debug.enable('*');
 let appDb = new PouchDB('finance');
-appDb.on('error', () => { debugger; });
+appDb.on('error', (e) => { console.log(e); });
 
 let dbManager = new DbManager(appDb);
 
@@ -46,10 +46,20 @@ let channels = {
   },
 };
 
-let ledger = dbManager.queryObject('ledger', {
-  startkey: ['acct-32104241']
-  // TODO: reduction for running total; probably do a custom one client-side
-});
+//let ledger = dbManager.queryObject('ledger', {
+//  //startkey: ['acct-32104241']
+//  //include_docs: false,
+//  reduce: false,
+//  //group: true,
+//  //group_level: 1,
+//});
+//let ledger = dbManager.queryValue('ledger', {
+//  //startkey: ['acct-32104241']
+//  //include_docs: false,
+//  reduce: true,
+//  group: true,
+//  group_level: 1,
+//});
 //let bal = queryValue('acct-sum', {
 //  startkey: ['acct-2884365']
 //});
@@ -201,7 +211,7 @@ let notifications = hg.array([
 let appState = hg.state({
   dumpState: dbManager.keyArray(),
   showDesignDocs: hg.value(false),
-  ledger,
+  //ledger,
   listenerCount: dbManager.listenerCountObs,
 
   // not sure about putting something here that isn't serializable...

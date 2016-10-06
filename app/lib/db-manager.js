@@ -9,7 +9,7 @@ import utils from './utils';
 import MetaObserv from './observ-observ';
 let { isMetaObserv } = MetaObserv;
 
-let {log, trace} = utils;
+let { logReject, trace } = utils;
 
 let { array: ObservArray, varhash: ObservVarhash, value: ObservValue } = hg;
 
@@ -90,7 +90,7 @@ class DbManager
       }
     }).catch(e =>
     {
-      if (e.status !== 409) log(e); // TODO: rethrow?
+      if (e.status !== 409) logReject(e); // TODO: rethrow?
       // TODO: delete and recreate if different
     });
   }
@@ -127,7 +127,7 @@ class DbManager
     let initQuery = Object.assign({ include_docs: true }, opts);
     observ.ready = this.db
       .allDocs(initQuery)
-      .catch(log)
+      .catch(logReject)
       .then(res =>
       {
         observ.set(res.rows.map(d => ObservValue(d.doc)));
@@ -184,7 +184,7 @@ class DbManager
     // TODO: do we use struct or value?
     obj.ready = this.db
       .allDocs(opts)
-      .catch(log)
+      .catch(logReject)
       .then(res =>
       {
         for (let d of res.rows) obj.put(d.id, d.doc);
@@ -243,7 +243,7 @@ class DbManager
       this.loadIndex(view).then(viewDef =>
         this.db
           .query(view, viewQuery)
-          .catch(log)
+          .catch(logReject)
           .then(res =>
           {
             let old = hash();
@@ -296,7 +296,7 @@ class DbManager
 
     val.ready = this.db
       .get(id, opts)
-      .catch(log)
+      .catch(logReject)
       .then(doc =>
       {
         val.set(doc);
@@ -330,14 +330,14 @@ class DbManager
       this.loadIndex(view).then(viewDef =>
         this.db
           .query(view, opts)
-          .catch(log)
-          .then(res => val.set(res.rows[0].value)));
+          .catch(logReject)
+          .then(res => val.set(res)));
     };
 
     refresh();
 
     // TODO: use [onChange]; need to know view definition
-    changeQuery = {
+    let changeQuery = {
       live: true,
       since: 'now',
       filter: '_view',

@@ -137,14 +137,15 @@ export default {
             _rev: doc._rev,
             createDate: createDate.toISOString(),
             status: form.status,
-            offsets: _(offsets()).filter('acct._id').map(o =>
+            offsets: _(offsets()).filter('acct._id').reduce((s, o) =>
             {
-              let ret = { acct: o.acct._id };
-              if (o.add) ret.add = o.add * 100;
-              else ret.sub = o.sub * 100;
+              let ao = { };
+              if (o.add) ao.add = o.add * 100;
+              else ao.sub = o.sub * 100;
 
-              return ret;
-            }).value(),
+              s[o.acct._id] = ao;
+              return s;
+            }, {}),
           }).then(res =>
           {
             if (!doc._id)

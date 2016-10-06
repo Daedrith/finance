@@ -10,6 +10,21 @@
   content: " X";
 }
 
+body {
+  --bg-primary-light: #BBDEFB;
+}
+
+/**
+ * Tables
+ */
+.table-hover > tbody > tr:hover {
+  background-color: var(--bg-primary-light);
+}
+
+.table-clickable > tbody > tr {
+  cursor: pointer;
+}
+
 /**
  * Body CSS
  */

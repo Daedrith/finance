@@ -187,6 +187,8 @@ let navigate = co.wrap(function*(url, opts)
   ct.dispose();
 });
 
+services.navigate = navigate;
+
 // TODO: loading screen?
 navigate(document.location.href, { async: false, history: 'noop' });
 

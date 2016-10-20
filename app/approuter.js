@@ -3,7 +3,7 @@ import index from './pages/index';
 
 export let router = (fun, url) =>
 {
-  if (!(url instanceof URL)) url = new URL(url);
+  if (!(url instanceof URL)) url = new URL(url, document.location.origin);
   
   url = url.hash[1] === '/'
     ? new URL(url.origin + url.hash.slice(1))

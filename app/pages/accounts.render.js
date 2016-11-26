@@ -22,7 +22,6 @@ export default function(s)
   let d = s.doc;
 
   return div([
-    h1('Account List'),
     panel(table('.mui-table.mui-table--bordered.table-hover.table-clickable', [
       thead([
         tr([

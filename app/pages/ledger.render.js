@@ -3,8 +3,10 @@ import hh from 'hyperscript-helpers';
 import muihh from '../lib/mui-hyperscript-helpers';
 
 let {h} = hg;
-let { h1, table, thead, tbody, tr, td, th, div } = hh(h);
+let { h1, table, thead, tbody, tr, td, th, div, br } = hh(h);
 let { panel } = muihh(h);
+
+let nbsp = String.fromCharCode(160);
 
 export default function(s)
 {
@@ -15,7 +17,7 @@ export default function(s)
   }
 
   return div([
-    panel(table('.mui-table.table-hover.table-clickable', [
+    panel(table('.mui-table.mui-table--bordered.table-hover.table-clickable.ledger', [
       thead([
         tr([
           th('Post Date'),
@@ -25,21 +27,38 @@ export default function(s)
         ])
       ]),
       tbody([
-        s.xacts.map(x => [
-          tr({ 'ev-click': hg.send(s.channels.toXact, { id: x._id.slice(5) }) }, [
-            td(new Date(x._id.slice(5)).toLocaleDateString()),
-            td(x.desc),
-            td(),
-            td(),
-          ]),
-          Object.entries(x.offsets).map(([aid, o]) =>
-            tr({ 'ev-click': hg.send(s.channels.toXact, { id: x._id.slice(5) }) }, [
-              td(),
-              td('.mui--text-right', s.accts[aid]),
-              td('.mui--text-right', o.add ? (o.add / 100).toFixed(2) : ''),
-              td('.mui--text-right', o.sub ? (o.sub / 100).toFixed(2) : ''),
-          ])),
-        ])
+        s.xacts.map(x =>
+        {
+          let cols = Object.entries(x.offsets).map(([aid, o]) => [
+              null,
+              div('.mui--text-right', s.accts[aid].name),
+              div('.mui--text-right', o.add ? (o.add / 100).toFixed(2) : nbsp),
+              div('.mui--text-right', o.sub ? (o.sub / 100).toFixed(2) : nbsp),
+          ]);
+          cols.unshift([
+            new Date(x._id.slice(5)).toLocaleDateString(),
+            x.desc || nbsp,
+            nbsp,
+            nbsp,
+          ]);
+          let rows = cols.reduce((ret, cs, i) =>
+          {
+            if (i === 1)
+            {
+              ret = ret.map(x => [x]);
+            }
+
+            ret.forEach((x, i) =>
+            {
+              x.push(cs[i]);
+            });
+
+            return ret;
+          });
+          return tr(
+            { 'ev-click': hg.send(s.channels.toXact, { id: x._id.slice(5) }) },
+            rows.map(r => td(r)));
+        })
       ]),
     ])),
   ]);

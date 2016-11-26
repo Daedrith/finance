@@ -15,6 +15,13 @@ body {
 }
 
 /**
+ * Special
+ */
+.ledger > tbody > tr > td:first-child {
+  vertical-align: top;
+}
+
+/**
  * Tables
  */
 .table-hover > tbody > tr:hover {

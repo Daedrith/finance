@@ -1,7 +1,7 @@
 import routeMap from 'route-map';
 import index from './pages/index';
 
-export let router = (fun, url) =>
+export let router = ((fun, url) =>
 {
   if (!(url instanceof URL)) url = new URL(url, document.location.origin);
   
@@ -10,6 +10,6 @@ export let router = (fun, url) =>
     : url;
   
   return fun(url.href);
-}.bind(null, routeMap(index));
+}).bind(null, routeMap(index));
 
 export let getPage = url => router(url).fn;

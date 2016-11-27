@@ -9,8 +9,7 @@ System.config({
     ],
     "blacklist": [
       "es6.forOf",
-      "es6.spread",
-      "regenerator"
+      "es6.spread"
     ]
   },
   paths: {
@@ -356,11 +355,25 @@ System.config({
     "hyperscript-helpers": "npm:hyperscript-helpers@3.0.1",
     "lodash": "npm:lodash@4.5.1",
     "mercury": "npm:mercury@14.1.0",
+    "mercury-navigator": "github:Daedrith/mercury-navigator@0.2.0",
     "mercury-router": "npm:mercury-router@1.1.0",
     "observ": "npm:observ@0.2.0",
     "pouchdb": "//cdn.jsdelivr.net/pouchdb/5.0.0/pouchdb.js",
     "route-map": "npm:route-map@0.1.0",
     "underscore": "npm:underscore@1.8.3",
+    "github:Daedrith/mercury-navigator@0.1.0": {
+      "observ": "npm:observ@0.2.0",
+      "observ-meta": "github:Daedrith/observ-meta@0.1.0",
+      "observ-struct-a": "github:Daedrith/observ-struct-a@0.1.0"
+    },
+    "github:Daedrith/mercury-navigator@0.2.0": {
+      "observ": "npm:observ@0.2.0",
+      "observ-meta": "github:Daedrith/observ-meta@0.1.0",
+      "observ-struct-a": "github:Daedrith/observ-struct-a@0.1.0"
+    },
+    "github:Daedrith/observ-meta@0.1.0": {
+      "observ": "npm:observ@0.2.0"
+    },
     "github:jspm/nodelibs-assert@0.1.0": {
       "assert": "npm:assert@1.3.0"
     },

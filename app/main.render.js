@@ -11,11 +11,11 @@ let a = (text, href, opts) =>
   return h('a', opts, text);
 };
 
-function renderPage(url, pageState)
+function renderPage(navState)
 {
   try
   {
-    return getPage(url).render(pageState);
+    return navState.pageRenderer(navState.pageObs());
   }
   catch(e)
   {
@@ -94,7 +94,7 @@ function renderDebug(s)
     ]),
     h('.mui-col-md-6', [
       h('h3', 'Page state dump'),
-      h('pre.mui-panel', JSON.stringify(s.pageState, null, 2).replace(/\\n/g, '\n'))
+      h('pre.mui-panel', JSON.stringify(s.navState.pageObs(), null, 2).replace(/\\n/g, '\n'))
     ])
   ]);
 }
@@ -118,19 +118,19 @@ export default (s) =>
   }
 
   // HACK: manipulating document.title; do outside RAF?
-  if (document.title !== (s.pageState.title || "Finance"))
+  if (document.title !== (s.navState.pageObs().title || "Finance"))
   {
-    document.title = s.pageState.title || "Finance";
+    document.title = s.navState.pageObs().title || "Finance";
   }
-
+  
   let chs = s.channels;
   return h('div', { style: { height: '100%' } }, [
     hg.partial(renderNav),
-    hg.partial(renderAppbar, s.pageState.title, chs),
+    hg.partial(renderAppbar, s.navState.pageObs().title, chs),
     h('#content-wrapper', [
       h('.mui--appbar-height'),
       h('.mui-container-fluid', [
-        hg.partial(renderPage, s.navState.url, s.pageState),
+        hg.partial(renderPage, s.navState),
 
         hg.partial(renderDebug, s),
       ])

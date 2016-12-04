@@ -21,7 +21,8 @@ export default function(s)
 
   return h('form.mui-panel.mui-form--inline', { 'ev-submit': hg.sendSubmit(s.channels.save) }, [ // TODO: figure out multiple element situation
     h('legend', (d._id ? 'Edit' : 'New') + ' transaction'),
-    c('Create Date', { type: 'datetime-local', style: { 'padding-top': '15px' } }), ' ',
+    c('Description', { style: { marginTop: '15px' }, value: d.description }), ' ',
+    c('Post Date', { type: 'datetime-local', style: { marginTop: '15px' }, valueAsNumber: s.postDate }), ' ',
     c('Status', h('.mui-select', h('select', { name: 'status', value: d.status },
       'verified'.split(' ').map(v => h('option', { value: v }, v))
     ))),

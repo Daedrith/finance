@@ -1,8 +1,10 @@
 ﻿import hg from 'mercury';
 import Router from 'mercury-router';
-import _ from 'underscore';
 import co from 'co';
 import PouchDB from 'pouchdb';
+
+import struct from 'observ-struct-a';
+import * as observPouchdb from 'observ-pouchdb';
 
 import DbManager from './lib/db-manager';
 import obsobs from './lib/observ-observ';
@@ -23,18 +25,29 @@ let {anchor} = Router;
 let appDb = new PouchDB('finance');
 appDb.on('error', (e) => { console.log(e); });
 
+Object.assign(observPouchdb.defaults, {
+  db: appDb,
+  ObservArray: hg.array,
+  ObservValue: hg.value,
+  ObservVarhash: hg.varhash,
+});
+
 let dbManager = new DbManager(appDb);
+
+// TODO: lifecycle for hot reload?
+let dbDump = observPouchdb.KeyArray(() => {});
 
 // the mercury Component pattern seems to advocate emitting events, like a decoupled RPC mechanism;
 // for now, I'll go for something simple
 let services = {
   appDb,
   dbManager,
+  navigate,
 };
 
 Object.assign(window, services);
 
-setRouter((href, context, opts) =>
+setRouter((href, opts) =>
 {
   let route = router(href);
   if (!route) return null;
@@ -44,8 +57,9 @@ setRouter((href, context, opts) =>
   {
     let ret = (opts, disposeSignal) =>
     {
-      let state = page.init(opts, opts, services);
-      disposeSignal(() => page.dispose(state));
+      let state = page.init(route.params, opts, services);
+      if (page.dispose) disposeSignal(() => page.dispose(state));
+
       return state;
     };
     ret.render = page.render;
@@ -53,6 +67,7 @@ setRouter((href, context, opts) =>
   }
   else
   {
+    opts.params = route.params;
     return page;
   }
 });
@@ -61,30 +76,12 @@ navigate(document.location.href, { history: 'pushState' });
 
 registerAnchorEvents(hg.Delegator());
 
-//let ledger = dbManager.queryObject('ledger', {
-//  //startkey: ['acct-32104241']
-//  //include_docs: false,
-//  reduce: false,
-//  //group: true,
-//  //group_level: 1,
-//});
-//let ledger = dbManager.queryValue('ledger', {
-//  //startkey: ['acct-32104241']
-//  //include_docs: false,
-//  reduce: true,
-//  group: true,
-//  group_level: 1,
-//});
-//let bal = queryValue('acct-sum', {
-//  startkey: ['acct-2884365']
-//});
-
 let notifications = hg.array([
 
 ]);
 
 let appState = hg.state({
-  dumpState: dbManager.keyArray(),
+  dumpState: dbDump,
   showDesignDocs: hg.value(false),
   //ledger,
   listenerCount: dbManager.listenerCountObs,

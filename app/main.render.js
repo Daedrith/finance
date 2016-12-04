@@ -45,7 +45,8 @@ function renderNav()
       h('li', [
         h('strong', 'Transactions'),
         h('ul', [
-          h('li', a('New Transaction', '#/xacts')),
+          h('li', a('General Ledger', '#/xacts')),
+          h('li', a('New Transaction', '#/xacts/new')),
           h('li', a('Edit Transaction', '#/xacts/6192115'))
         ])
       ]),

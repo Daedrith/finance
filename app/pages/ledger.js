@@ -21,6 +21,8 @@ export default {
 
     if (oldState)
     {
+      // TODO: find better workaround
+      oldState.channels = state.channels();
       state.set(oldState);
     }
 

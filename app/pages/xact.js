@@ -9,6 +9,8 @@ import toReadyObserv from '../lib/observ-ready';
 
 import { KeyValue, DocHash } from 'observ-pouchdb';
 
+import { appDb as db } from '../appdb';
+
 function XactForm(opts, disposeSignal)
 {
   let { state: oldState } = opts;
@@ -36,13 +38,13 @@ function XactForm(opts, disposeSignal)
   // TODO: extract a local copy to be bound to form?
   if (!doc)
   {
-    doc = hg.value({ status: 'verified', offsets: [], _id: 'xact-' + Math.round(Date.now() / 60000) });
+    doc = hg.value({ status: 'verified', offsets: [] });
     doc.ready = Promise.resolve(doc);
   }
 
   let postDate = hg.computed([doc], d =>
   {
-    if (!d) return null;
+    if (!d || !d._id) return Math.round(Date.now() / 60000) * 60000;
     
     var ts = +d._id.slice(5) * 60000;
     return ts - new Date(ts).getTimezoneOffset() * 60000;
@@ -66,7 +68,7 @@ function XactForm(opts, disposeSignal)
     postDate,
     accts,
     offsets,
-    ready: toReadyObserv(doc.ready, accts.ready),
+    ready: Promise.all([doc.ready, accts.ready]),
     channels: {
       updateOffset(s, form)
       {
@@ -165,6 +167,8 @@ function XactForm(opts, disposeSignal)
 
   if (oldState)
   {
+    // TODO: find better workaround
+    oldState.channels = state.channels();
     state.set(oldState);
   }
 

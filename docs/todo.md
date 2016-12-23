@@ -4,9 +4,10 @@ Version 1
 Short/medium-term plans
 -----------------------
 
+- fix navigate back bug
 - notification system
-- implement simple account ledger view
-- account hierarchy
+- search filters on ledger view
+- account tag system
 - flesh out form cycle:
   - saving state: lock down, wait indicator
   - error feedback (async): unlock
@@ -29,10 +30,8 @@ Views
 
 - top level view
   - navigation, notifications, etc.
-- general ledger
+- ledger
 - acct list/hierarchy
-- acct ledger
-  - acct+subs ledger
 - xact add/edit?
 
 Channels
@@ -63,7 +62,6 @@ Version 2
 Wishlist
 ========
 
-- Signal graph visualizer for observables
 - Type annotations?
 - Hot reload: remove imperative code from top-level / main module, or do some custom `__hotReload` logic
 - Future: rewind/fast-forward? (enough to do from DB side?)

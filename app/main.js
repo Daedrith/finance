@@ -1,7 +1,6 @@
 ﻿import hg from 'mercury';
 import Router from 'mercury-router';
 import co from 'co';
-import PouchDB from 'pouchdb';
 
 import struct from 'observ-struct-a';
 import * as observPouchdb from 'observ-pouchdb';
@@ -13,17 +12,15 @@ import {log} from './lib/utils';
 import renderMain from './main.render';
 
 import { router, getPage } from './approuter';
+import { appDb } from './appdb';
+import { wrapPatch, postPatchTaskQueue } from './lib/post-patch-queue';
 
-import { setRouter, registerAnchorEvents, navigate, navState } from 'mercury-navigator';
+import { setRouter, setPostRenderRunner, registerAnchorEvents, navigate, navState } from 'mercury-navigator';
 
 let {h} = hg;
 let {anchor} = Router;
 
 //export const __hotReload = true;
-
-// PouchDB.debug.enable('*');
-let appDb = new PouchDB('finance');
-appDb.on('error', (e) => { console.log(e); });
 
 Object.assign(observPouchdb.defaults, {
   db: appDb,
@@ -71,6 +68,7 @@ setRouter((href, opts) =>
     return page;
   }
 });
+setPostRenderRunner([].push.bind(postPatchTaskQueue));
 
 navigate(document.location.href, { history: 'pushState' });
 
@@ -111,6 +109,7 @@ dbManager.appState = appState;
 let stop = hg.app(
   document.body,
   appState,
-  renderMain);
+  renderMain,
+  { patch: wrapPatch(hg.patch) });
 
 export let __hotreload = true;

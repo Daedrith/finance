@@ -5,6 +5,8 @@ import muihh from '../lib/mui-hyperscript-helpers';
 import formUtils from '../lib/form-utils';
 import submitEv from '../lib/submit-event';
 
+import { navigate } from 'mercury-navigator';
+
 let {h} = hg;
 let { input, label } = hh(h);
 let { control: c } = formUtils;
@@ -15,7 +17,7 @@ const lblClass = '.mui--text-dark-secondary.mui--text-caption';
 
 export default function(s)
 {
-  if (!s.ready)
+  if (!s.loaded)
   {
     // TODO: overlay or something
     return h('h3', 'Loading...');
@@ -34,19 +36,20 @@ export default function(s)
       input({ name: 'description', value: d.description, type: 'text', autofocus, required }),
       label('Description'),
     ]),
-    h('.mui-row', { style: { marginTop: '15px' } }, [
+    h('.mui-row.grid-headers', [
       h('.mui-col-md-8', label(lblClass, 'Account')),
       h('.mui-col-md-2', label(lblClass, 'Add')),
       h('.mui-col-md-2', label(lblClass, 'Sub')),
     ]),
-    // TODO: CSS to get rid of top margins
     s.offsets.map((o, index) =>
       h('.mui-row', { key: o.key, 'ev-event': hg.sendChange(s.channels.updateOffset, { index }) }, [
         h('.mui-col-md-8', c('Account', { name: 'acct', placeholder, list: 'accts', value: o.acct.name, field: o.acctField })),
         h('.mui-col-md-2', c('Add', { type: 'number', step: 0.01, placeholder, value: o.add, field: o.addField })),
         h('.mui-col-md-2', c('Sub', { type: 'number', step: 0.01, placeholder, value: o.sub, field: o.subField })),
       ])),
-    h('button.mui-btn.mui-btn--raised.mui-btn--primary', d._id ? 'Update' : 'Create'),
+    h('button.mui-btn.mui-btn--raised.mui-btn--primary',
+      { disabled: s.saving },
+      d._id ? 'Update' : 'Create'),
 
     h('datalist#accts',
       Object.values(s.accts).map(a => h('option', { value: a.name }))),

@@ -3,61 +3,58 @@ import render from './account.render';
 
 import readyToObserv from '../lib/observ-ready';
 
+import { appDb } from '../appdb';
+import { KeyValue } from 'observ-pouchdb';
+
 // TODO: module?
 let epoch = +new Date(2015, 8, 12, 0, 0, 0);
 // TODO: hybrid serial + random?
 let genId = () => Math.floor((Date.now() - epoch) / 1000);
 
-export default {
-  init(params, opts, services)
-  {
-    let { state: oldState } = opts;
+function AccountForm(opts, disposeSignal)
+{
+  let { state: oldState } = opts;
 
-    let doc = params.id != null
-      ? services.dbManager.keyValue('acct-' + params.id, opts)
-      : null;
+  let doc = opts.params.id != null
+    ? KeyValue('acct-' + opts.params.id, disposeSignal)
+    : null;
 
-    let state = this.AccountForm(doc, services.appDb);
-
-    if (oldState)
-    {
-      state.set(oldState);
-    }
-
-    return state;
-  },
-  render: render,
-  dispose(state)
-  {
-  },
-  AccountForm(doc, appDb)
-  {
-    doc = doc || hg.value({ name: '' });
-    let title = hg.computed([doc], d => `Accounts > ${(d && d.name) || 'New'}`);
-    // TODO: extract a local copy to be bound to form?
-    return hg.state({
-      title,
-      doc, // dereferencing doc is going to get old... observ interesting subkeys?
-           // grr... but the blacklisted "name" key
-      ready: readyToObserv(doc.ready),
-      channels: {
-        save(s, form) {
-          // TODO: form cycle events
-          let doc = s.doc();
-          appDb.put({
-            _id: doc._id || `acct-${genId()}`,
-            _rev: doc._rev,
-            name: form.name
-          }).then(res =>
-          {
-            if (!doc._id)
-            {
-              // TODO: send message to navigate to /accts/{res.id}
-              // replace option
-            }
-          }); // TODO: error handling
-        }
+  doc = doc || hg.value({ name: '' });
+  let title = hg.computed([doc], d => `Accounts > ${(d && d.name) || 'New'}`);
+  // TODO: extract a local copy to be bound to form?
+  
+  let state = hg.state({
+    title,
+    doc,
+    ready: doc.ready,
+    loaded: readyToObserv(doc.ready),
+    channels: {
+      save(s, form) {
+        // TODO: form cycle events
+        let doc = s.doc();
+        appDb.put({
+          _id: doc._id || `acct-${genId()}`,
+          _rev: doc._rev,
+          name: form.name
+        }).then(res =>
+        {
+          // TODO: add notification, track sync status
+          history.back();
+        }); // TODO: error handling
       }
-    });
+    }
+  });
+
+  if (oldState)
+  {
+    oldState.channels = state.channels();
+    state.set(oldState);
   }
+
+  return state;
 };
+
+// TODO: this pattern not hot-reload friendly?
+AccountForm.render = render;
+
+export default AccountForm;

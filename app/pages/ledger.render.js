@@ -10,7 +10,7 @@ let nbsp = String.fromCharCode(160);
 
 export default function(s)
 {
-  if (!s.ready)
+  if (!s.loaded)
   {
     // TODO: overlay or something
     return h('h3', 'Loading...');

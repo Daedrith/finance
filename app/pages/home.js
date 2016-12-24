@@ -1,21 +1,12 @@
 import hg from 'mercury';
 
-export default {
-  init(params, opts)
-  {
-    return this.Home();
-  },
-  render(s)
-  {
-    return hg.h('h3', 'Hello world');
-  },
-  dispose(state)
-  {
-  },
-  Home()
-  {
-    return hg.state({
-      title: hg.value('Home')
-    });
-  }
-};
+function Home()
+{
+  return hg.state({
+    title: hg.value('Home')
+  });
+}
+
+Home.render = (s) => hg.h('h3', 'Hello world');
+
+export default Home;

@@ -16,6 +16,7 @@ let argsHelper = (css, props, children) =>
   }
   else if (typeof css === 'object') // TODO: figure out if content or props
   {
+    children = props;
     props = css;
     css = '';
   }
@@ -53,7 +54,8 @@ let splitProps = (obj, props) => (typeof props === 'string'
 
 let components = {
   appbar: true,
-  button: 'button.mui-btn', // TODO: direct ripple support?
+  // TODO: direct ripple support?
+  button: { _: 'button.mui-btn', _options: 'raised flat fab primary danger accent' },
   caret: 'span.mui-caret',
   checkbox: (h, lbl, css, props) =>
   {
@@ -108,7 +110,7 @@ let components = {
       h('a', { href: link, target, 'data-mui-value': value, 'ev-click': onClick },
         children));
   },
-  form: { _: 'form', inline: 'form.mui-form--inline' },
+  form: { _: 'form', inline: '.mui-form--inline' },
   // skipping input
   option: 'option',
   panel: true,
@@ -175,19 +177,25 @@ export default function(h)
         exportFns[name] = stringToFunc(h, '.mui-' + name);
         break;
       case 'object':
+        if (comp._options)
+        {
+          let optPrefix = comp._.match(/(\.[\w-]+)/)[1] + '--';
+          comp._options.split(' ').forEach(k => comp[k] = optPrefix + k);
+          delete comp._options;
+        }
+
         exportFns[name] = (css, props, children) =>
         {
           ({css, props, children} = argsHelper(css, props, children));
 
-          let cssPrefix = null;
-          Object.keys(comp).any(k =>
+          let cssPrefix = comp._;
+          Object.keys(comp).forEach(k =>
           {
             if (k !== '_' && props[k])
             {
-              cssPrefix = comp[k];
-              return true;
+              cssPrefix += comp[k];
             }
-          }) || (cssPrefix = comp._);
+          });
 
           return h(cssPrefix + css, props, children);
         };

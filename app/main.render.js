@@ -13,12 +13,15 @@ let a = (text, href, opts) =>
 
 function renderPage(navState)
 {
+  if (!navState.pageRenderer) return h('h3', 'Loading...');
+  
   try
   {
     return navState.pageRenderer(navState.pageObs());
   }
   catch(e)
   {
+    console.error(e);
     return h('pre', e.stack);
   }
 }

@@ -1,49 +1,40 @@
 import hg from 'mercury';
 import render from './ledger.render';
 
+import { KeyArray, DocHash } from 'observ-pouchdb';
+
 import readyToObserv from '../lib/observ-ready';
 
-// TODO: module?
-let epoch = +new Date(2015, 8, 12, 0, 0, 0);
-// TODO: hybrid serial + random?
-let genId = () => Math.floor((Date.now() - epoch) / 1000);
+function GeneralLedger(opts, disposeSignal)
+{
+  let { state: oldState } = opts;
 
-export default {
-  init(params, opts, services)
-  {
-    let { state: oldState } = opts;
-
-    let db = services.dbManager;
-    let accts = db.keyObject({ startkey: 'acct-' });
-    let xacts = db.keyArray({ startkey: 'xact-' });
-    
-    let state = this.GeneralLedger(xacts, accts, services.navigate);
-
-    if (oldState)
-    {
-      // TODO: find better workaround
-      oldState.channels = state.channels();
-      state.set(oldState);
-    }
-
-    return state;
-  },
-  render: render,
-  dispose(state)
-  {
-  },
-  GeneralLedger(xacts, accts, navigate)
-  {
-    return hg.state({
-      title: "General Ledger",
-      accts,
-      xacts,
-      ready: readyToObserv(xacts.ready),
-      channels: {
-        toXact(s, {id}) {
-          navigate(`#/xacts/${id}`);
-        }
+  let accts = DocHash(disposeSignal, { prefix: 'acct-' });
+  let xacts = KeyArray(disposeSignal, { prefix: 'xact-' });
+  
+  let state = hg.state({
+    title: "General Ledger",
+    accts,
+    xacts,
+    ready: Promise.all([accts.ready, xacts.ready]),
+    loaded: readyToObserv(accts.ready, xacts.ready),
+    channels: {
+      toXact(s, {id}) {
+        navigate(`#/xacts/${id}`);
       }
-    });
+    }
+  });
+
+  if (oldState)
+  {
+    // TODO: find better workaround
+    oldState.channels = state.channels();
+    state.set(oldState);
   }
-};
+
+  return state;
+}
+
+GeneralLedger.render = render;
+
+export default GeneralLedger;

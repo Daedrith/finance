@@ -21,6 +21,13 @@ body {
   vertical-align: top;
 }
 
+.grid-headers {
+  margin-top: 15px;
+}
+.grid-headers ~ .mui-row .mui-textfield {
+  padding-top: 0;
+}
+
 /**
  * Tables
  */

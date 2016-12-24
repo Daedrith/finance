@@ -38,7 +38,7 @@ function XactForm(opts, disposeSignal)
   // TODO: extract a local copy to be bound to form?
   if (!doc)
   {
-    doc = hg.value({ status: 'verified', offsets: [] });
+    doc = hg.value({ status: 'verified', offsets: [], description: '' });
     doc.ready = Promise.resolve(doc);
   }
 
@@ -61,6 +61,8 @@ function XactForm(opts, disposeSignal)
         .value());
   }));
 
+  let ready = Promise.all([doc.ready, accts.ready]);
+
   let title = hg.computed([doc], d => `Transactions > ${(d && d._id) || 'New'}`);
   let state = hg.state({
     title,
@@ -68,7 +70,9 @@ function XactForm(opts, disposeSignal)
     postDate,
     accts,
     offsets,
-    ready: Promise.all([doc.ready, accts.ready]),
+    saving: hg.value(false),
+    ready: ready,
+    loaded: toReadyObserv(ready),
     channels: {
       updateOffset(s, form)
       {
@@ -133,7 +137,8 @@ function XactForm(opts, disposeSignal)
           return;
         }
 
-        // TODO: form cycle events
+        s.saving.set(true);
+
         let postDate = form.postDate
           ? localStringToDate(form.postDate)
           : new Date();
@@ -155,16 +160,18 @@ function XactForm(opts, disposeSignal)
           }, {}),
         }).then(res =>
         {
-          if (!doc._id)
-          {
-            // TODO: send message to navigate to /xacts/{res.id}
-            // replace option
-          }
+          //if (!doc._id)
+          //{
+          //  navigate(`#/xacts/${res.id}`, { history: 'replace' });
+          //}
+
+          // TODO: add notification, track sync status
+          history.back();
         }); // TODO: error handling
       },
     }
   });
-
+  
   if (oldState)
   {
     // TODO: find better workaround

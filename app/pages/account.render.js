@@ -9,13 +9,14 @@ let { panel, button } = muihh(h);
 // TODO: module
 let lbl = (n, c, a) => h('.mui-textfield', [h(c, a), h('label', n)]);
 
-const required = true;
+const required = true, primary = true, raised = true;
 
 export default function(s)
 {
-  if (!s.ready)
+  if (!s.loaded)
   {
     // TODO: overlay or something
+    // TODO: potentially move this concern outside the page's render code
     return h('h3', 'Loading...');
   }
 
@@ -24,6 +25,6 @@ export default function(s)
   return panel('form', { 'ev-submit': hg.sendSubmit(s.channels.save) }, [
     legend((d._id ? 'Update' : 'Create') + ' Account'),
     lbl('Name', 'input', { name: 'name', required, value: d.name }),
-    button('.mui-btn--raised', d._id ? 'Update' : 'Create'),
+    button({ raised, primary }, d._id ? 'Update' : 'Create'),
   ]);
 };

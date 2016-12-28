@@ -2,12 +2,6 @@ import ObservStruct2 from '../lib/observ-struct2';
 import _ from 'underscore';
 
 export default { // TODO: use individual exports
-  getIdHash(dbManager)
-  {
-    return dbManager.keyObject({
-      startkey: 'acct-'
-    });
-  },
   finder(acct, accts)
   {
     // return an observable shere setting the .name or ._id subkeys, sets the whole object to the corresponding object in accts

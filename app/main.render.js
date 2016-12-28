@@ -14,7 +14,7 @@ let a = (text, href, opts) =>
 function renderPage(navState)
 {
   if (!navState.pageRenderer) return h('h3', 'Loading...');
-  
+
   try
   {
     return navState.pageRenderer(navState.pageObs());
@@ -80,7 +80,6 @@ function renderDebug(s)
       h('h3', 'Database dump'),
       h('.mui-panel',
         h('pre#dbdump', [
-          h('span', ['Listener count: ', ''+s.listenerCount]),
           h('.mui-checkbox',
             h('label', [h('input', { name: 'full-dump', type: 'checkbox', 'ev-change': hg.sendChange(chs.toggleFullDump) }), 'Show full dump'])),
           s.dumpState

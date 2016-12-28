@@ -4,6 +4,7 @@ import render from './accounts.render';
 import readyToObserv from '../lib/observ-ready';
 
 import { KeyArray } from 'observ-pouchdb';
+import { navigate } from 'mercury-navigator';
 
 function AccountList(opts, disposeSignal)
 {

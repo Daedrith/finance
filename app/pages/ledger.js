@@ -2,6 +2,7 @@ import hg from 'mercury';
 import render from './ledger.render';
 
 import { KeyArray, DocHash } from 'observ-pouchdb';
+import { navigate } from 'mercury-navigator';
 
 import readyToObserv from '../lib/observ-ready';
 

@@ -5,7 +5,6 @@ import co from 'co';
 import struct from 'observ-struct-a';
 import * as observPouchdb from 'observ-pouchdb';
 
-import DbManager from './lib/db-manager';
 import obsobs from './lib/observ-observ';
 import {log} from './lib/utils';
 
@@ -29,20 +28,8 @@ Object.assign(observPouchdb.defaults, {
   ObservVarhash: hg.varhash,
 });
 
-let dbManager = new DbManager(appDb);
-
 // TODO: lifecycle for hot reload?
 let dbDump = observPouchdb.KeyArray(() => {});
-
-// the mercury Component pattern seems to advocate emitting events, like a decoupled RPC mechanism;
-// for now, I'll go for something simple
-let services = {
-  appDb,
-  dbManager,
-  navigate,
-};
-
-Object.assign(window, services);
 
 setRouter((href, opts) =>
 {
@@ -50,23 +37,8 @@ setRouter((href, opts) =>
   if (!route) return null;
 
   let page = route.fn;
-  if (page.init) // compatibility code. TODO: remove
-  {
-    let ret = (opts, disposeSignal) =>
-    {
-      let state = page.init(route.params, opts, services);
-      if (page.dispose) disposeSignal(() => page.dispose(state));
-
-      return state;
-    };
-    ret.render = page.render;
-    return ret;
-  }
-  else
-  {
-    opts.params = route.params;
-    return page;
-  }
+  opts.params = route.params;
+  return page;
 });
 setPostRenderRunner([].push.bind(postPatchTaskQueue));
 
@@ -81,8 +53,6 @@ let notifications = hg.array([
 let appState = hg.state({
   dumpState: dbDump,
   showDesignDocs: hg.value(false),
-  //ledger,
-  listenerCount: dbManager.listenerCountObs,
 
   navState,
   sidebarVisible: hg.value(true),
@@ -103,8 +73,6 @@ let appState = hg.state({
 });
 
 window.appState = appState;
-
-dbManager.appState = appState;
 
 let stop = hg.app(
   document.body,

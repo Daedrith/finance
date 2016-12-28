@@ -5,8 +5,6 @@ import muihh from '../lib/mui-hyperscript-helpers';
 import formUtils from '../lib/form-utils';
 import submitEv from '../lib/submit-event';
 
-import { navigate } from 'mercury-navigator';
-
 let {h} = hg;
 let { input, label } = hh(h);
 let { control: c } = formUtils;

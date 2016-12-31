@@ -6,7 +6,8 @@ let argsHelper = (css, props, children) =>
   if (Array.isArray(props))
   {
     children = props;
-    props = {};
+    if (typeof css === 'string') return { css, props: {}, children };
+    else return { css: '', props: css, children };
   }
   
   if (Array.isArray(css))
@@ -55,6 +56,7 @@ let splitProps = (obj, props) => (typeof props === 'string'
 let components = {
   appbar: true,
   // TODO: direct ripple support?
+  abutton: { _: 'a.mui-btn', _options: 'raised flat fab primary danger accent' },
   button: { _: 'button.mui-btn', _options: 'raised flat fab primary danger accent' },
   caret: 'span.mui-caret',
   checkbox: (h, lbl, css, props) =>
@@ -129,7 +131,7 @@ let components = {
   select: (h, lbl, css, props, children) =>
   {
     ({css, props, children} = argsHelper(css, props, children));
-    let inputProps = splitProps(props, 'readOnly value ev-change ev-mousedown ev-click ev-focus');
+    let inputProps = splitProps(props, 'name readOnly value ev-change ev-mousedown ev-click ev-focus');
     return h('.mui-select', props, [
       h('select', inputProps, children),
       typeof lbl === 'string'

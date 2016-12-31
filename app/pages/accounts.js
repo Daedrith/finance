@@ -10,6 +10,7 @@ function AccountList(opts, disposeSignal)
 {
   let { state: oldState } = opts;
 
+  // TODO: secondary indexing
   let accts = KeyArray(disposeSignal, { prefix: 'acct-' });
   let xacts = KeyArray(disposeSignal, { prefix: 'xact-' });
   let balances = hg.computed([xacts], function(xs)

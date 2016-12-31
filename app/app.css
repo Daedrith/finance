@@ -28,6 +28,11 @@ body {
   padding-top: 0;
 }
 
+form .spacer {
+  display: inline-block;
+  width: 30px;
+}
+
 /**
  * Tables
  */

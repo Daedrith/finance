@@ -1,6 +1,7 @@
 import hg from 'mercury';
 import hh from 'hyperscript-helpers';
 import muihh from '../lib/mui-hyperscript-helpers';
+import { capitalize } from 'lodash';
 
 let {h} = hg;
 let { h1, table, thead, tbody, tr, td, th, div } = hh(h);
@@ -26,6 +27,8 @@ export default function(s)
       thead([
         tr([
           th('Account Name'),
+          th('Type'),
+          th('Tags'),
           th('.mui--text-right', 'Balance'),
         ])
       ]),
@@ -33,6 +36,8 @@ export default function(s)
         s.accts.map(a =>
           tr({ 'ev-click': hg.send(s.channels.toAcct, { id: a._id.slice(5) }) }, [
             td(a.name),
+            td(capitalize(a.type)),
+            td(a.tags.join(', ')),
             td('.mui--text-right', (s.balances[a._id] / 100).toFixed(2)),
           ]))
       ]),

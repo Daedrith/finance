@@ -2,11 +2,12 @@ import hg from 'mercury';
 import hh from 'hyperscript-helpers';
 import muihh from '../lib/mui-hyperscript-helpers';
 
-let {h} = hg;
-let { h1, table, thead, tbody, tr, td, th, div, br } = hh(h);
-let { panel } = muihh(h);
+const { h } = hg;
+const { h1, table, thead, tbody, tr, td, th, div, br } = hh(h);
+const { panel, abutton } = muihh(h);
 
-let nbsp = String.fromCharCode(160);
+const nbsp = String.fromCharCode(160);
+const primary = true, raised = true;
 
 export default function(s)
 {
@@ -16,8 +17,8 @@ export default function(s)
     return h('h3', 'Loading...');
   }
 
-  return div([
-    panel(table('.mui-table.mui-table--bordered.table-hover.table-clickable.ledger', [
+  return panel([
+    table('.mui-table.mui-table--bordered.table-hover.table-clickable.ledger', [
       thead([
         tr([
           th('Post Date'),
@@ -60,6 +61,7 @@ export default function(s)
             rows.map(r => td(r)));
         })
       ]),
-    ])),
+    ]),
+    abutton({ href: '#/xacts/new', primary, raised }, 'Add'),
   ]);
 };

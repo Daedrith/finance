@@ -42,7 +42,7 @@ setRouter((href, opts) =>
 });
 setPostRenderRunner([].push.bind(postPatchTaskQueue));
 
-navigate(document.location.href, { history: 'pushState' });
+navigate(document.location.href, { history: 'replaceState' });
 
 registerAnchorEvents(hg.Delegator());
 

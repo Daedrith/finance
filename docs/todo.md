@@ -4,10 +4,8 @@ Version 1
 Short/medium-term plans
 -----------------------
 
-- fix navigate back bug
 - notification system
 - search filters on ledger view
-- account tag system
 - flesh out form cycle:
   - saving state: lock down, wait indicator
   - error feedback (async): unlock
@@ -20,36 +18,8 @@ Framework
 ---------
 
 - form generation?
-  - form component for better composition?
-  - validation
-    - html5 validation rocks. However, need to think about errors down the line (e.g. local-db error, remote db error). Command-Query Separation tells us that the command should be fire-and-forget, and... (forgot what I was going to write here)
-  - would need a schema system... probably overkill for now
-
-Views
------
-
-- top level view
-  - navigation, notifications, etc.
-- ledger
-- acct list/hierarchy
-- xact add/edit?
-
-Channels
---------
-
-- acct add/edit
-- xact add/edit
-
-Optimization
-------------
-
-- figure out where I use plain values or obesrv-values
-- thunks
-
-Misc
-----
-
-- modularize CSS
+  - consider JsonSchema
+- rework event system?
 
 Version 2
 =========

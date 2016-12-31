@@ -74,6 +74,32 @@ function XactForm(opts, disposeSignal)
     ready: ready,
     loaded: toReadyObserv(ready),
     channels: {
+      update(s, form)
+      {
+        s.doc.set({
+          ...s.doc(),
+          postDate: Date.parse(form.postDate),
+          ..._.pick(form, ['description', 'status']) });
+      },
+      autoPickAccount(s, data)
+      {
+        let offset = s.offsets.get(data.index);
+        if (offset.acct._id() || !offset.acct.name()) return;
+
+        let prefix = offset.acct.name().toLowerCase();
+        let matchedAcctId = null;
+        for (let [id, acct] of Object.entries(s.accts()))
+        {
+          if (acct.name.toLowerCase().startsWith(prefix))
+          {
+            if (matchedAcctId) return; // ambiguous; don't auto-pick
+
+            matchedAcctId = id;
+          }
+        }
+
+        offset.acct._id.set(matchedAcctId);
+      },
       updateOffset(s, form)
       {
         let offset = s.offsets.get(form.index);
@@ -165,6 +191,8 @@ function XactForm(opts, disposeSignal)
           //  navigate(`#/xacts/${res.id}`, { history: 'replace' });
           //}
 
+          // TODO: think about just emitting an event, and delegating to a higher handler,
+          //       e.g. if page is in a dialog, it would dismiss the dialog
           // TODO: add notification, track sync status
           history.back();
         }); // TODO: error handling

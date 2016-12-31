@@ -120,7 +120,7 @@ export default (s) =>
     body.classList.toggle('hide-sidedrawer');
   }
 
-  // HACK: manipulating document.title; do outside RAF?
+  // TODO: update title in navigator
   if (document.title !== (s.navState.pageObs().title || "Finance"))
   {
     document.title = s.navState.pageObs().title || "Finance";

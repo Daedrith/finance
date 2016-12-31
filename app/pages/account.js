@@ -35,7 +35,9 @@ function AccountForm(opts, disposeSignal)
         appDb.put({
           _id: doc._id || `acct-${genId()}`,
           _rev: doc._rev,
-          name: form.name
+          name: form.name,
+          type: form.type,
+          tags: form.tags.split(' ').filter(x => x),
         }).then(res =>
         {
           // TODO: add notification, track sync status

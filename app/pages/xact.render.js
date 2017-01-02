@@ -1,5 +1,6 @@
 import hg from 'mercury';
 import hh from 'hyperscript-helpers';
+import { capitalize } from 'lodash';
 
 import muihh from '../lib/mui-hyperscript-helpers';
 import formUtils from '../lib/form-utils';
@@ -54,6 +55,6 @@ export default function(s)
       d._id ? 'Update' : 'Create'),
 
     h('datalist#accts',
-      Object.values(s.accts).map(a => h('option', { value: a.name }))),
+      Object.values(s.accts).map(a => h('option', { value: a.name }, capitalize(a.type)))),
   ]);
 };

@@ -8,6 +8,7 @@ import ledger from './ledger';
 export default {
   '/': home,
   '/accounts': accounts,
+  '/accounts/new': account,
   '/accounts/:id': account,
   '/xacts': ledger,
   '/xacts/new': xact,

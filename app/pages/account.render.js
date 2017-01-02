@@ -9,7 +9,7 @@ let { form, button, select, option } = muihh(h);
 
 let { control: c } = formUtils;
 
-const required = true, primary = true, raised = true, inline = true;
+const required = true, primary = true, raised = true, inline = true, autofocus = true;
 
 export default function(s)
 {
@@ -24,7 +24,7 @@ export default function(s)
 
   return form('.mui-panel', { inline, 'ev-submit': hg.sendSubmit(s.channels.save) }, [
     legend((d._id ? 'Update' : 'Create') + ' Account'),
-    c('Name', { value: d.name, required }),
+    c('Name', { value: d.name, autofocus, required }),
     ' ',
     select('Type', { name: 'type', value: d.type, required }, [
       option({ value: 'asset' }, 'Asset'),

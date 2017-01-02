@@ -2,3 +2,7 @@
 /node_modules
 /bower_components
 /jspm_packages
+/server/log.txt
+/server/_replicator
+/server/_users
+/server/pouch__all_dbs__

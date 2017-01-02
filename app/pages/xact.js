@@ -99,6 +99,17 @@ function XactForm(opts, disposeSignal)
         }
 
         offset.acct._id.set(matchedAcctId);
+
+        // add new record if last isn't blank
+        let lastOffset = s.offsets.get(s.offsets.getLength() - 1);
+        if (lastOffset().acct._id)
+        {
+          let bal = s.offsets.reduce((bal, o) => bal + (o.add() || -o.sub()), 0);
+          if (bal > 0) lastOffset.sub.set(bal);
+          else if (bal < 0) lastOffset.add.set(-bal);
+
+          s.offsets.push(createOffset());
+        }
       },
       updateOffset(s, form)
       {

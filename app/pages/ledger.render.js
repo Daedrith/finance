@@ -62,6 +62,6 @@ export default function(s)
         })
       ]),
     ]),
-    abutton({ href: '#/xacts/new', primary, raised }, 'Add'),
+    abutton({ href: '#/xacts/new', accessKey: 'a', primary, raised }, 'Add'),
   ]);
 };

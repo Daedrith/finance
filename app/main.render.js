@@ -1,8 +1,10 @@
 ﻿import hg from 'mercury';
+import hh from 'hyperscript-helpers';
 
 import { getPage } from './approuter';
 
 let {h} = hg;
+let { span } = hh(h);
 
 // TODO: module
 let a = (text, href, opts) =>
@@ -30,30 +32,13 @@ function renderNav()
 {
   // TODO: drive from state
   return h('nav#sidedrawer.mui--no-user-select', [
-    h('#sidedrawer-brand.mui--appbar-line-height mui--text-title', 'Finance'),
+    h('#sidedrawer-brand.mui--appbar-line-height', [
+      span('.mui--text-title', 'Finance'),
+    ]),
     h('.mui-divider'),
-    h('ul', [
-      h('li', [
-        h('strong', 'Main'),
-        h('ul', [
-          h('li', a('Home', '/#')),
-        ])
-      ]),
-      h('li', [
-        h('strong', 'Accounts'),
-        h('ul', [
-          h('li', a('Account List', '#/accounts')),
-        ])
-      ]),
-      h('li', [
-        h('strong', 'Transactions'),
-        h('ul', [
-          h('li', a('General Ledger', '#/xacts')),
-          h('li', a('New Transaction', '#/xacts/new')),
-          h('li', a('Edit Transaction', '#/xacts/6192115'))
-        ])
-      ]),
-    ])
+    a('Home', '/#', { accessKey: '1' }),
+    a('Accounts', '#/accounts', { accessKey: '2' }),
+    a('Ledger', '#/xacts', { accessKey: '3' }),
   ]);
 }
 

@@ -4,34 +4,31 @@ Version 1
 Short/medium-term plans
 -----------------------
 
-- notification system
 - search filters on ledger view
-- flesh out form cycle:
-  - saving state: lock down, wait indicator
-  - error feedback (async): unlock
-  - on success: unlock, reset form
-  - remote sync feedback (maybe completely out-of-channel? can we persistently attach an error condition to a particular document locally?)
 - server backend / storage
+  - Sandstorm.io package
+    - couchdb API via token, app itself via static publishing so offline can work?
+- thousands separators on numeric inputs
 - think of a project name
-
-Framework
----------
-
-- form generation?
-  - consider JsonSchema
-- rework event system?
 
 Version 2
 =========
 
+- notification system
 - Import
 - Recurring
-  - Interest rate calculation
+  - Interest rate calculation: possibly based on account in associated offsets, find last transaction and make interest a suggested amount?
 - Reconciliation
+- Reports:
+  - Home screen widgets
+- More account attributes, e.g. credit limits?
 
 Wishlist
 ========
 
+- form generation?
+  - consider JsonSchema
+- rework event system?
 - Type annotations?
 - Hot reload: remove imperative code from top-level / main module, or do some custom `__hotReload` logic
 - Future: rewind/fast-forward? (enough to do from DB side?)

@@ -50,6 +50,7 @@ function renderAppbar(title, chs)
         //h('a.sidedrawer-toggle.mui--visible-xs-inline-block', '☰'),
         //h('a.sidedrawer-toggle.mui--hidden-xs', {
         h('a.sidedrawer-toggle', {
+            accessKey: 'b',
             'ev-click': hg.send(chs.toggleSidedrawer)
           }, '☰'),
         h('span.mui--text-title.mui--visible-xs-inline-block', 'Finance'),
@@ -61,26 +62,7 @@ function renderDebug(s)
 {
   let chs = s.channels;
   return h('.mui-row', [
-    h('.mui-col-md-6', [
-      h('h3', 'Database dump'),
-      h('.mui-panel',
-        h('pre#dbdump', [
-          h('.mui-checkbox',
-            h('label', [h('input', { name: 'full-dump', type: 'checkbox', 'ev-change': hg.sendChange(chs.toggleFullDump) }), 'Show full dump'])),
-          s.dumpState
-            .filter(d => s.showDesignDocs || d._id[0] !== '_')
-            .map(d =>
-              h('div', [
-                JSON.stringify(d, null, 2).replace(/\\n/g, '\n'),
-                h('span.del', { 'ev-click': hg.send(chs.docDel, d) })
-              ]))
-        ])
-      ),
-      //h('h3', 'Ledger dump'),
-      //h('.mui-panel',
-      //  h('pre', JSON.stringify(s.ledger, null, 2)))
-    ]),
-    h('.mui-col-md-6', [
+    h('.mui-col-md-12', [
       h('h3', 'Page state dump'),
       h('pre.mui-panel', JSON.stringify(s.navState.pageObs(), null, 2).replace(/\\n/g, '\n'))
     ])

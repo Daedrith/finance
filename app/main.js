@@ -51,9 +51,6 @@ let notifications = hg.array([
 ]);
 
 let appState = hg.state({
-  dumpState: dbDump,
-  showDesignDocs: hg.value(false),
-
   navState,
   sidebarVisible: hg.value(true),
   notifications,

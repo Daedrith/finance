@@ -104,7 +104,7 @@ function XactForm(opts, disposeSignal)
         let lastOffset = s.offsets.get(s.offsets.getLength() - 1);
         if (lastOffset().acct._id)
         {
-          let bal = s.offsets.reduce((bal, o) => bal + (o.add() || -o.sub()), 0);
+          let bal = s.offsets.reduce((bal, o) => bal + Math.round(o.add()*100 || -o.sub()*100), 0) / 100;
           if (bal > 0) lastOffset.sub.set(bal);
           else if (bal < 0) lastOffset.add.set(-bal);
 
@@ -140,7 +140,7 @@ function XactForm(opts, disposeSignal)
         let lastOffset = s.offsets.get(s.offsets.getLength() - 1);
         if (lastOffset().acct._id)
         {
-          let bal = s.offsets.reduce((bal, o) => bal + (o.add() || -o.sub()), 0);
+          let bal = s.offsets.reduce((bal, o) => bal + Math.round(o.add()*100 || -o.sub()*100), 0) / 100;
           if (bal > 0) lastOffset.sub.set(bal);
           else if (bal < 0) lastOffset.add.set(-bal);
 
@@ -163,7 +163,7 @@ function XactForm(opts, disposeSignal)
       save(s, form)
       {
         // TODO: validation
-        let bal = s.offsets.reduce((bal, o) => bal + (o.add() || -o.sub()), 0);
+        let bal = s.offsets.reduce((bal, o) => bal + Math.round(o.add()*100 || -o.sub()*100), 0) / 100;
         if (bal !== 0)
         {
           s.offsets.forEach(o =>

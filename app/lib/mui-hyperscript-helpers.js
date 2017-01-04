@@ -48,7 +48,8 @@ let splitProps = (obj, props) => (typeof props === 'string'
   : props).reduce(
       (newProps, prop) =>
       {
-        newProps[prop] = rmProp(obj, prop);
+        let val = rmProp(obj, prop);
+        if (val !== undefined) newProps[prop] = val;
         return newProps;  
       },
       {});
@@ -132,6 +133,12 @@ let components = {
   {
     ({css, props, children} = argsHelper(css, props, children));
     let inputProps = splitProps(props, 'name readOnly value ev-change ev-mousedown ev-click ev-focus');
+    let options = rmProp(props, 'options');
+    if (!children && options)
+    {
+      children = Object.entries(options).map(([value, lbl]) =>
+        h('option', { value, selected: value === inputProps.value }, lbl));
+    }
     return h('.mui-select', props, [
       h('select', inputProps, children),
       typeof lbl === 'string'

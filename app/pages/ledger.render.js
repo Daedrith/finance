@@ -33,8 +33,8 @@ export default function(s)
           let cols = Object.entries(x.offsets).map(([aid, o]) => [
               null,
               div('.mui--text-right', s.accts[aid].name),
-              div('.mui--text-right', o.add ? (o.add / 100).toFixed(2) : nbsp),
-              div('.mui--text-right', o.sub ? (o.sub / 100).toFixed(2) : nbsp),
+              div('.mui--text-right', o.add ? (o.add / 100).toLocaleString('en-US', { minimumFractionDigits: 2 }) : nbsp),
+              div('.mui--text-right', o.sub ? (o.sub / 100).toLocaleString('en-US', { minimumFractionDigits: 2 }) : nbsp),
           ]);
           cols.unshift([
             new Date(x._id.slice(5) * 60000).toLocaleDateString(),

@@ -8,6 +8,7 @@ import submitEv from '../lib/submit-event';
 
 let {h} = hg;
 let { input, label } = hh(h);
+let { select } = muihh(h);
 let { control: c } = formUtils;
 
 const required = true, placeholder = true, autofocus = true;
@@ -29,9 +30,10 @@ export default function(s)
     h('legend', (d._id ? 'Edit' : 'New') + ' transaction'),
     c('Post Date', { type: 'datetime-local', valueAsNumber: s.postDate, disabled: d._id, required, style: mt15 }),
     h('.spacer'),
-    c('Status', h('.mui-select', h('select', { name: 'status', value: d.status },
-      'verified'.split(' ').map(v => h('option', { value: v }, v))
-    ))),
+    select('Status', { name: 'status', value: d.status, options: {
+      verified: 'Verified',
+      predicted: 'Predicted',
+    }}),
     h('br'),
     h('.mui-textfield', { style: { width: '100%' } }, [
       input({ name: 'description', value: d.description, type: 'text', autofocus, required }),

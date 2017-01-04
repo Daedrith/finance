@@ -30,6 +30,7 @@ function AccountList(opts, disposeSignal)
 
   let state = hg.state({
     title: "Account List",
+    showAll: hg.value(false),
     accts,
     balances,
     ready: accts.ready,
@@ -37,7 +38,10 @@ function AccountList(opts, disposeSignal)
     channels: {
       toAcct(s, {id}) {
         navigate(`#/accounts/${id}`);
-      }
+      },
+      updateShowAll(s, form) {
+        s.showAll.set(form.showAll);
+      },
     }
   });
 

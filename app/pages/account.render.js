@@ -1,13 +1,11 @@
 import hg from 'mercury';
 import hh from 'hyperscript-helpers';
 import muihh from '../lib/mui-hyperscript-helpers';
-import formUtils from '../lib/form-utils';
+import { control as c } from '../lib/form-utils';
 
 let {h} = hg;
 let { legend, input, br } = hh(h);
 let { form, button, select, option } = muihh(h);
-
-let { control: c } = formUtils;
 
 const required = true, primary = true, raised = true, inline = true, autofocus = true;
 

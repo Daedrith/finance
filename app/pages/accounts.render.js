@@ -30,7 +30,7 @@ export default function(s)
   let groups = _.groupBy(accts, 'type');
 
   return panel([
-    table('.mui-table.mui-table--bordered.table-hover.table-clickable', [
+    table('.mui-table.mui-table--bordered', [
       thead([
         tr([
           th('Account Name'),
@@ -42,7 +42,7 @@ export default function(s)
         tbody([
           tr(td({ colSpan: 3 }, strong('Type: ' + _.capitalize(t)))),
           groups[t].map(a =>
-            tr({ 'ev-click': hg.send(s.channels.toAcct, { id: a._id.slice(5) }) }, [
+            tr('.bg-clickable', { 'ev-click': hg.send(s.channels.toAcct, { id: a._id.slice(5) }) }, [
               td(a.name),
               td(a.tags.join(', ')),
               td('.mui--text-right', ((s.balances[a._id] || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })),

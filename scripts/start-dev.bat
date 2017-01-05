@@ -5,6 +5,9 @@ cd /d %~dp0\..
 
 call :run LiveReloadX /min cmd /c livereloadx -s . -p 8080 --exclude "jspm_packages/" --exclude "node_modules/"
 
+cd server
+call :run PouchDBServer /min cmd /c pouchdb-server --port 5984
+
 ::call :run Server /min cmd /c scripts\server.bat
 
 :: call :run Babel cmd /c babel -w -m amd -b es6.forOf -s -d _public app

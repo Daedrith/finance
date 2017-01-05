@@ -18,7 +18,7 @@ export default function(s)
   }
 
   return panel([
-    table('.mui-table.mui-table--bordered.table-hover.table-clickable.ledger', [
+    table('.mui-table.mui-table--bordered.ledger', [
       thead([
         tr([
           th('Post Date'),
@@ -57,6 +57,7 @@ export default function(s)
             return ret;
           });
           return tr(
+            '.bg-clickable',
             { 'ev-click': hg.send(s.channels.toXact, { id: x._id.slice(5) }) },
             rows.map(r => td(r)));
         })

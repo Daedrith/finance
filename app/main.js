@@ -26,10 +26,8 @@ Object.assign(observPouchdb.defaults, {
   ObservArray: hg.array,
   ObservValue: hg.value,
   ObservVarhash: hg.varhash,
+  errorHandler: e => console.error(e),
 });
-
-// TODO: lifecycle for hot reload?
-let dbDump = observPouchdb.KeyArray(() => {});
 
 setRouter((href, opts) =>
 {

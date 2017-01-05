@@ -3,13 +3,12 @@ import hh from 'hyperscript-helpers';
 import { capitalize } from 'lodash';
 
 import muihh from '../lib/mui-hyperscript-helpers';
-import formUtils from '../lib/form-utils';
+import { control as c } from '../lib/form-utils';
 import submitEv from '../lib/submit-event';
 
 let {h} = hg;
 let { input, label } = hh(h);
 let { select } = muihh(h);
-let { control: c } = formUtils;
 
 const required = true, placeholder = true, autofocus = true;
 const mt15 = { marginTop: '15px' };

@@ -33,15 +33,11 @@ form .spacer {
   width: 30px;
 }
 
-/**
- * Tables
- */
-.table-hover > tbody > tr:hover {
-  background-color: var(--bg-primary-light);
-}
-
-.table-clickable > tbody > tr {
+.bg-clickable {
   cursor: pointer;
+}
+.bg-clickable:hover {
+  background-color: var(--bg-primary-light);
 }
 
 /**

@@ -9,6 +9,7 @@ Short/medium-term plans
   - Sandstorm.io package
     - couchdb API via token, app itself via static publishing so offline can work?
 - thousands separators on numeric inputs
+- clear unbalanced offsets validation error on update (submit won't fire)
 - think of a project name
 
 Version 2

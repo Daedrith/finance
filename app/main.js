@@ -53,16 +53,15 @@ let appState = hg.state({
   sidebarVisible: hg.value(true),
   notifications,
 
+  showDebug: hg.value(false),
+
   channels: {
     toggleSidedrawer(s) {
       s.sidebarVisible.set(!s.sidebarVisible());
     },
-    // debug
-    docDel(s, d) {
-      appDb.remove(d).catch(log);
-    },
-    toggleFullDump(s, d) {
-      s.showDesignDocs.set(d['full-dump']);
+    toggleDebug(s, d)
+    {
+      s.showDebug.set(!s.showDebug());
     },
   },
 });

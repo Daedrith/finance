@@ -54,13 +54,16 @@ function renderAppbar(title, chs)
             'ev-click': hg.send(chs.toggleSidedrawer)
           }, '☰'),
         h('span.mui--text-title.mui--visible-xs-inline-block', 'Finance'),
-        h('span.mui--text-title.mui--hidden-xs', title)
+        h('span.mui--text-title.mui--hidden-xs', title),
+        h('a.mui--pull-right', {
+          title: 'Toggle debug',
+          'ev-click': hg.send(chs.toggleDebug),
+        }, '~')
       ])));
 }
 
 function renderDebug(s)
 {
-  let chs = s.channels;
   return h('.mui-row', [
     h('.mui-col-md-12', [
       h('h3', 'Page state dump'),
@@ -102,7 +105,9 @@ export default (s) =>
       h('.mui-container-fluid', [
         hg.partial(renderPage, s.navState),
 
-        hg.partial(renderDebug, s),
+        s.showDebug
+          ? hg.partial(renderDebug, s)
+          : null,
       ])
     ]),
     h('footer#footer',

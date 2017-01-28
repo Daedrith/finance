@@ -8,9 +8,10 @@ import submitEv from '../lib/submit-event';
 
 let {h} = hg;
 let { input, label } = hh(h);
-let { select } = muihh(h);
+let { select, button, abutton, panel } = muihh(h);
 
 const required = true, placeholder = true, autofocus = true;
+const raised = true, flat = true, primary = true, danger = true;
 const mt15 = { marginTop: '15px' };
 const lblClass = '.mui--text-dark-secondary.mui--text-caption';
 
@@ -24,10 +25,15 @@ export default function(s)
 
   let d = s.doc;
 
+  if (d == null)
+  {
+    return panel('.mui--text-center', 'Transaction not found; it may have been deleted.');
+  }
+
   return h('form.mui-panel.mui-form--inline',
       { 'ev-submit': hg.sendSubmit(s.channels.save), 'ev-event': hg.sendChange(s.channels.update) }, [ // TODO: figure out multiple element situation
     h('legend', (d._id ? 'Edit' : 'New') + ' transaction'),
-    c('Post Date', { type: 'datetime-local', valueAsNumber: s.postDate, disabled: d._id, required, style: mt15 }),
+    c('Post Date', { type: 'datetime-local', valueAsNumber: s.postDate, accessKey: 'e', disabled: d._id, required, style: mt15 }),
     h('.spacer'),
     select('Status', { name: 'status', value: d.status, options: {
       verified: 'Verified',
@@ -35,7 +41,7 @@ export default function(s)
     }}),
     h('br'),
     h('.mui-textfield', { style: { width: '100%' } }, [
-      input({ name: 'description', value: d.description, type: 'text', autofocus, required }),
+      input({ name: 'description', value: d.description, accessKey: 'd', type: 'text', autofocus, required }),
       label('Description'),
     ]),
     h('.mui-row.grid-headers', [
@@ -51,9 +57,8 @@ export default function(s)
         h('.mui-col-md-2', c('Add', { type: 'number', step: 0.01, placeholder, value: o.add, field: o.addField })),
         h('.mui-col-md-2', c('Sub', { type: 'number', step: 0.01, placeholder, value: o.sub, field: o.subField })),
       ])),
-    h('button.mui-btn.mui-btn--raised.mui-btn--primary',
-      { disabled: s.saving },
-      d._id ? 'Update' : 'Create'),
+    button({ primary, raised, disabled: s.saving }, d._id ? 'Update' : 'Create'),
+    d._id ? abutton({ flat, danger, 'ev-click': hg.sendClick(s.channels.delete) }, 'Delete') : null,
 
     h('datalist#accts',
       Object.values(s.accts).map(a => h('option', { value: a.name }, capitalize(a.type)))),

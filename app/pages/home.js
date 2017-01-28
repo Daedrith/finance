@@ -11,7 +11,7 @@ let { h } = hg;
 let { legend, span } = hh(h);
 let { panel, form, row, col, button, abutton, checkbox } = muihh(h);
 
-const disabled = true, raised = true, primary = true, danger = true;
+const disabled = true, raised = true, flat = true, primary = true, danger = true;
 
 function Home(opts, disposeSignal)
 {
@@ -55,6 +55,13 @@ function Home(opts, disposeSignal)
             URL.revokeObjectURL(url);
           }, 0);
         });
+      },
+      destroy(s)
+      {
+        if (window.prompt("Type DESTROY to confirm:") === 'DESTROY')
+        {
+          appDb.destroy();
+        }
       }
     }
   });
@@ -79,9 +86,10 @@ Home.render = (s) =>
           ])
         ])
       ),
-      panel(
-        abutton({ raised, disabled: s.exporting, 'ev-click': hg.send(s.channels.export) }, 'Export')
-      )
+      panel([
+        abutton({ raised, disabled: s.exporting, 'ev-click': hg.send(s.channels.export) }, 'Export'),
+        abutton({ flat, danger, 'ev-click': hg.send(s.channels.destroy) }, 'Destroy'),
+      ])
     ]),
     col({ md: 6 },
       panel(

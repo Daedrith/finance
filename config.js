@@ -342,12 +342,14 @@ System.config({
   },
 
   meta: {
-    "//cdn.jsdelivr.net/pouchdb/5.0.0/pouchdb.js": {
-      "integrity": "sha384-yZnRIuJqcu3aV491h6RhT0iv5l7q0Dt3L1M52s7/plUzD7bD788RPTmnZSXCdBJ+"
+    "//cdnjs.cloudflare.com/ajax/libs/pouchdb/6.1.1/pouchdb.js": {
+      "integrity": "sha256-fwoSZOa9MMgqftlgLRNKBLfai4KoMsMZTG2W3UaR41I="
     }
   },
 
   map: {
+    "Daedrith/mercury-navigator": "github:Daedrith/mercury-navigator@dev",
+    "Daedrith/observ-pouchdb": "github:Daedrith/observ-pouchdb@dev",
     "babel": "npm:babel-core@5.8.35",
     "babel-runtime": "npm:babel-runtime@5.8.35",
     "co": "npm:co@4.6.0",
@@ -360,7 +362,7 @@ System.config({
     "observ": "npm:observ@0.2.0",
     "observ-pouchdb": "github:Daedrith/observ-pouchdb@dev",
     "observ-struct-a": "github:Daedrith/observ-struct-a@0.1.0",
-    "pouchdb": "//cdn.jsdelivr.net/pouchdb/5.0.0/pouchdb.js",
+    "pouchdb": "//cdnjs.cloudflare.com/ajax/libs/pouchdb/6.1.1/pouchdb.js",
     "route-map": "npm:route-map@0.1.0",
     "underscore": "npm:underscore@1.8.3",
     "github:Daedrith/mercury-navigator@dev": {

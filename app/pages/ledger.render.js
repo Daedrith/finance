@@ -22,7 +22,7 @@ export default function(s)
       thead([
         tr([
           th('Post Date'),
-          th('Description'),
+          th(['Description', div('.mui--pull-right', 'Account')]),
           th('.mui--text-right', 'Add'),
           th('.mui--text-right', 'Sub'),
         ])
@@ -36,13 +36,8 @@ export default function(s)
               div('.mui--text-right', o.add ? (o.add / 100).toLocaleString('en-US', { minimumFractionDigits: 2 }) : nbsp),
               div('.mui--text-right', o.sub ? (o.sub / 100).toLocaleString('en-US', { minimumFractionDigits: 2 }) : nbsp),
           ]);
-          cols.unshift([
-            new Date(x._id.slice(5) * 60000).toLocaleDateString(),
-            x.description || nbsp,
-            nbsp,
-            nbsp,
-          ]);
-          let rows = cols.reduce((ret, cs, i) =>
+          cols[0][0] = new Date(x._id.slice(5) * 60000).toLocaleDateString();
+          let cells = cols.reduce((ret, cs, i) =>
           {
             if (i === 1)
             {
@@ -56,10 +51,11 @@ export default function(s)
 
             return ret;
           });
+          cells[1].unshift(div('.mui--pull-left', x.description));
           return tr(
             '.bg-clickable',
             { 'ev-click': hg.send(s.channels.toXact, { id: x._id.slice(5) }) },
-            rows.map(r => td(r)));
+            cells.map(r => td(r)));
         })
       ]),
     ]),

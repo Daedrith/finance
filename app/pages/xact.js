@@ -81,6 +81,13 @@ function XactForm(opts, disposeSignal)
           postDate: Date.parse(form.postDate),
           ..._.pick(form, ['description', 'status']) });
       },
+      delete(s)
+      {
+        if (window.confirm('Really delete transaction?'))
+        {
+          db.remove(s.doc()).then(() => history.back());
+        }
+      },
       autoPickAccount(s, data)
       {
         let offset = s.offsets.get(data.index);

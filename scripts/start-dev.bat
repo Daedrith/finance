@@ -3,7 +3,7 @@ cd /d %~dp0\..
 
 :: call :run Compiler cmd /c watchy -w app -- scripts\compile.bat
 
-call :run LiveReloadX /min cmd /c livereloadx -s . -p 8080 --exclude "jspm_packages/" --exclude "node_modules/"
+call :run LiveReloadX /min cmd /c livereloadx -s . -p 8080 --exclude "jspm_packages/" --exclude "node_modules/" --exclude "server/"
 
 cd server
 call :run PouchDBServer /min cmd /c pouchdb-server --port 5984

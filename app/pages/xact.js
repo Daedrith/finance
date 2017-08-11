@@ -7,7 +7,7 @@ import { localStringToDate } from '../lib/date-utils';
 import struct from 'observ-struct-a';
 import toReadyObserv from '../lib/observ-ready';
 
-import { KeyValue, DocHash } from 'observ-pouchdb';
+import { KeyValue, DocHash, KeyArray } from 'observ-pouchdb';
 
 import { appDb as db } from '../appdb';
 
@@ -20,6 +20,7 @@ function XactForm(opts, disposeSignal)
     : null;
 
   let accts = DocHash(disposeSignal, { prefix: 'acct-' });
+  let acctsSorted = hg.computed([accts], x => _.sortBy(x, ['type', 'name']));
 
   // TODO: module; and perhaps consider holding value as well?
   let fieldState = () => struct({ error: '', disabled: false });
@@ -27,7 +28,7 @@ function XactForm(opts, disposeSignal)
   let offsetKey = 0;
   let createOffset = (o, acct) => struct({
     key: offsetKey++,
-    acct: Accts.finder(acct && { _id: acct }, accts),
+    acct: Accts.finder(acct && { _id: acct }, acctsSorted),
     add: hg.value(o && (o.add / 100)),
     sub: hg.value(o && (o.sub / 100)),
     acctField: fieldState(),
@@ -61,6 +62,9 @@ function XactForm(opts, disposeSignal)
         .value());
   }));
 
+  let descs = KeyArray(disposeSignal, { prefix: 'xact-' });
+  let descriptions = hg.computed([descs], ds => _(ds).map(d => d.description).uniq().value());
+
   let ready = Promise.all([doc.ready, accts.ready]);
 
   let title = hg.computed([doc], d => `Transactions > ${(d && d._id) || 'New'}`);
@@ -68,11 +72,12 @@ function XactForm(opts, disposeSignal)
     title,
     doc,
     postDate,
-    accts,
+    accts: acctsSorted,
     offsets,
     saving: hg.value(false),
     ready: ready,
     loaded: toReadyObserv(ready),
+    descriptions,
     channels: {
       update(s, form)
       {

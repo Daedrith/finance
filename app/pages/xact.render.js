@@ -41,7 +41,7 @@ export default function(s)
     }}),
     h('br'),
     h('.mui-textfield', { style: { width: '100%' } }, [
-      input({ name: 'description', value: d.description, accessKey: 'd', type: 'text', autofocus, required }),
+      input({ name: 'description', value: d.description, accessKey: 'd', type: 'text', autofocus, required, attributes: { list: 'descs' } }),
       label('Description'),
     ]),
     h('.mui-row.grid-headers', [
@@ -62,5 +62,7 @@ export default function(s)
 
     h('datalist#accts',
       Object.values(s.accts).map(a => h('option', { value: a.name }, capitalize(a.type)))),
+    h('datalist#descs',
+      Object.values(s.descriptions).map(d => h('option', { value: d }))),
   ]);
 };
